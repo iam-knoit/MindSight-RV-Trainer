@@ -17,6 +17,7 @@ const translations = {
     "logout": "Sign Out",
     "operator": "Operator",
     "viewer": "Viewer",
+    "session": "Session",
     
     // Dashboard (Idle)
     "welcomeBack": "Welcome back",
@@ -112,6 +113,7 @@ const translations = {
     "logout": "ඉවත් වන්න",
     "operator": "ක්‍රියාකරු",
     "viewer": "නිරීක්ෂකයා",
+    "session": "සැසිය",
 
     // Dashboard (Idle)
     "welcomeBack": "නැවත සාදරයෙන් පිළිගනිමු",

@@ -426,6 +426,9 @@ function App() {
         <div className="flex items-center gap-6">
           {state !== SessionState.IDLE && (
              <div className="hidden md:flex items-center gap-4">
+               <div className="bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 font-mono text-sm font-bold text-blue-400">
+                  {t('session')} #{history.length + 1}
+               </div>
                <div className="flex items-center gap-2">
                  {STEPS.map((s) => (
                    <div key={s.id} className={`h-2 w-2 rounded-full ${state === SessionState.VIEWING && step >= s.id ? 'bg-blue-500' : 'bg-slate-700'}`} />
