@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
@@ -14,9 +14,42 @@ const generateCoordinate = () => {
   return `${p1}-${p2}`;
 };
 
-// Moved STEPS definition inside App or made it a function to access translation
-
 // --- SUB-COMPONENTS ---
+
+interface ConfirmationModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, title, message, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+        <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+        <p className="text-slate-400 mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button 
+            onClick={onCancel}
+            className="px-4 py-2 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors font-medium"
+          >
+            Confirm Exit
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface Step1Props {
   coordinate: string;
@@ -125,7 +158,7 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
 
           <button 
             onClick={onNext}
-            className="absolute bottom-10 px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all border border-slate-600 hover:border-blue-500"
+            className="absolute bottom-10 px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all border border-slate-600 hover:border-blue-500 z-20"
           >
             {t('stopFocusSeq')}
           </button>
@@ -271,9 +304,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
         <button 
+          type="button"
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
         >
@@ -352,6 +386,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <p className="text-slate-400 text-sm">
             {isLogin ? t('noAccount') : t('haveAccount')}{" "}
             <button 
+              type="button"
               onClick={() => setIsLogin(!isLogin)} 
               className="text-blue-400 hover:text-blue-300 font-semibold"
             >
@@ -367,6 +402,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 function App() {
   const { t, language, setLanguage } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [state, setState] = useState<SessionState>(SessionState.IDLE);
   const [step, setStep] = useState(1);
   const [sessionNumber, setSessionNumber] = useState(1);
@@ -382,8 +418,13 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState(t('initializing'));
   
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false); // Confirmation modal state
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
+
+  // Ref to track if the session is currently active/valid.
+  // This prevents race conditions where user exits (goes to IDLE) but async analysis finishes and forces FEEDBACK state.
+  const sessionRef = useRef<boolean>(false);
 
   const STEPS = [
     { id: 1, title: t('stepFocus'), icon: Brain },
@@ -400,6 +441,7 @@ function App() {
         setHistory([]); // Clear history on logout
         setCoachReport(null);
       }
+      setIsAuthChecking(false);
     });
     return () => unsubscribe();
   }, []);
@@ -437,9 +479,12 @@ function App() {
       setShowAuthModal(true);
       return; 
     }
+    
     setSessionNumber(history.length + 1);
     setIsLoading(true);
     setLoadingMessage(t('startSessionLoading'));
+    sessionRef.current = true; // Mark session as active
+
     try {
       const newCoord = generateCoordinate();
       setCoordinate(newCoord);
@@ -451,9 +496,13 @@ function App() {
       const targetData = await generateTargetImage();
       setTarget(targetData);
       
-      setState(SessionState.VIEWING);
+      // Check if user cancelled during loading
+      if (sessionRef.current) {
+        setState(SessionState.VIEWING);
+      }
     } catch (e) {
       alert("Failed to initialize session. Check connection.");
+      sessionRef.current = false;
     } finally {
       setIsLoading(false);
       setLoadingMessage(t('startSession'));
@@ -461,18 +510,24 @@ function App() {
   };
 
   const goHome = () => {
-    if (state === SessionState.VIEWING) {
-      if (window.confirm(t('confirmExit'))) {
-        setState(SessionState.IDLE);
-      }
-    } else if (state === SessionState.ANALYZING) {
-       // Warn user during analysis, though ideally we shouldn't interrupt
-       if (window.confirm(t('confirmExit'))) {
-         setState(SessionState.IDLE);
-       }
+    if (state === SessionState.IDLE) return;
+
+    const shouldConfirm = state === SessionState.VIEWING || state === SessionState.ANALYZING;
+
+    if (shouldConfirm) {
+      // Use custom modal instead of window.confirm
+      setShowExitConfirm(true);
     } else {
+      // In Feedback state, just go home immediately
+      sessionRef.current = false;
       setState(SessionState.IDLE);
     }
+  };
+
+  const confirmExitSession = () => {
+    sessionRef.current = false;
+    setState(SessionState.IDLE);
+    setShowExitConfirm(false);
   };
 
   // Submit session for analysis
@@ -483,6 +538,9 @@ function App() {
     try {
       const result = await analyzeSession(target.base64, userSketch, userNotes, language);
       
+      // Check if user cancelled during analysis (e.g. clicked Home)
+      if (!sessionRef.current) return;
+
       const newSession: SessionData = {
         id: Date.now().toString(),
         coordinate,
@@ -498,11 +556,15 @@ function App() {
       setCurrentSession(newSession);
       await saveSessionToCloud(user.uid, newSession);
       
-      setState(SessionState.FEEDBACK);
+      if (sessionRef.current) {
+        setState(SessionState.FEEDBACK);
+      }
     } catch (e) {
       console.error(e);
       alert("Analysis failed.");
-      setState(SessionState.VIEWING); 
+      if (sessionRef.current) {
+        setState(SessionState.VIEWING); 
+      }
     }
   };
 
@@ -514,9 +576,10 @@ function App() {
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
   const renderHeader = () => (
-    <header className="w-full p-6 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+    // Z-Index increased to z-40 to ensure it stays above content animations like breathing circle (z-10)
+    <header className="w-full p-6 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <button onClick={goHome} className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left group">
+        <button type="button" onClick={goHome} className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left group">
           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
             <Eye className="text-white" size={20} />
           </div>
@@ -534,20 +597,23 @@ function App() {
                <div className="bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 font-mono text-sm font-bold text-blue-400">
                   {t('session')} #{sessionNumber}
                </div>
-               <div className="flex items-center gap-2">
-                 {STEPS.map((s) => (
-                   <div key={s.id} className={`h-2 w-2 rounded-full ${state === SessionState.VIEWING && step >= s.id ? 'bg-blue-500' : 'bg-slate-700'}`} />
-                 ))}
-               </div>
+               {state === SessionState.VIEWING && (
+                 <div className="flex items-center gap-2">
+                   {STEPS.map((s) => (
+                     <div key={s.id} className={`h-2 w-2 rounded-full ${step >= s.id ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                   ))}
+                 </div>
+               )}
                <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 font-mono text-cyan-400 animate-pulse">
                  {t('trn')}: {coordinate}
                </div>
              </div>
           )}
           
-          {/* Explicit Exit Button for Mobile/Desktop when in session */}
-          {state === SessionState.VIEWING && (
+          {/* Explicit Exit Button for Mobile/Desktop when in ANY active session state */}
+          {state !== SessionState.IDLE && (
             <button
+              type="button"
               onClick={goHome}
               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-full transition-colors"
               title={t('exitSession')}
@@ -558,6 +624,7 @@ function App() {
 
           {/* Language Switcher */}
           <button
+            type="button"
             onClick={() => setLanguage(language === 'en' ? 'si' : 'en')}
             className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full transition-colors"
             title="Switch Language"
@@ -579,12 +646,13 @@ function App() {
                       <UserIcon size={16} />
                   </div>
               )}
-              <button onClick={logOut} className="p-2 text-slate-400 hover:text-red-400 transition-colors" title={t('logout')}>
+              <button type="button" onClick={logOut} className="p-2 text-slate-400 hover:text-red-400 transition-colors" title={t('logout')}>
                 <LogOut size={20} />
               </button>
             </div>
           ) : (
             <button 
+              type="button"
               onClick={() => setShowAuthModal(true)} 
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-600 transition-all"
             >
@@ -617,6 +685,7 @@ function App() {
         
         {user ? (
           <button
+            type="button"
             onClick={startSession}
             disabled={isLoading}
             className="mx-auto group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -630,6 +699,7 @@ function App() {
           </button>
         ) : (
           <button
+            type="button"
             onClick={() => setShowAuthModal(true)}
             className="mx-auto px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all flex items-center gap-3"
           >
@@ -792,7 +862,10 @@ function App() {
                 </span>
              </div>
              <button
-               onClick={() => setState(SessionState.IDLE)}
+               onClick={() => {
+                 sessionRef.current = false;
+                 setState(SessionState.IDLE);
+               }}
                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
              >
                {t('nextSession')}
@@ -848,9 +921,25 @@ function App() {
     );
   };
 
+  if (isAuthChecking) {
+    return (
+       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
+          <RefreshCw className="animate-spin mr-2" /> {t('initializing')}
+       </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 font-sans selection:bg-blue-500/30">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <ConfirmationModal 
+        isOpen={showExitConfirm}
+        title="Exit Session?"
+        message={t('confirmExit')}
+        onConfirm={confirmExitSession}
+        onCancel={() => setShowExitConfirm(false)}
+      />
+      
       {renderHeader()}
       
       <main className="relative z-0 flex-grow flex flex-col">

@@ -5,7 +5,9 @@ import {
   signInWithEmailAndPassword,
   signOut, 
   updateProfile,
-  User
+  User,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -33,6 +35,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Explicitly set persistence to local storage to keep users logged in
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Error setting auth persistence:", error);
+});
 
 // --- Auth Functions ---
 
