@@ -15,6 +15,7 @@ export interface SessionData {
   userNotes: string;
   aiScore: number;
   aiFeedback: string;
+  durationSeconds?: number;
 }
 
 export interface TargetImage {

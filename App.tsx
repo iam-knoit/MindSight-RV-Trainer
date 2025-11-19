@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
@@ -524,6 +524,8 @@ function App() {
   // Ref to track if the session is currently active/valid.
   // This prevents race conditions where user exits (goes to IDLE) but async analysis finishes and forces FEEDBACK state.
   const sessionRef = useRef<boolean>(false);
+  // Ref to track start time of a session
+  const startTimeRef = useRef<number>(0);
 
   const STEPS = [
     { id: 1, title: t('stepFocus'), icon: Brain },
@@ -583,6 +585,7 @@ function App() {
     setIsLoading(true);
     setLoadingMessage(t('startSessionLoading'));
     sessionRef.current = true; // Mark session as active
+    startTimeRef.current = Date.now(); // Start the training timer
 
     try {
       const newCoord = generateCoordinate();
@@ -640,6 +643,9 @@ function App() {
       // Check if user cancelled during analysis (e.g. clicked Home)
       if (!sessionRef.current) return;
 
+      // Calculate session duration in seconds
+      const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+
       const newSession: SessionData = {
         id: Date.now().toString(),
         coordinate,
@@ -649,7 +655,8 @@ function App() {
         userSketchBase64: userSketch,
         userNotes,
         aiScore: result.score,
-        aiFeedback: result.feedback
+        aiFeedback: result.feedback,
+        durationSeconds: durationSeconds
       };
 
       setCurrentSession(newSession);
@@ -673,6 +680,17 @@ function App() {
 
   const nextStep = () => setStep(s => Math.min(s + 1, 4));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
+
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return '0s';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (h > 0) return `${h}h ${m}${t('min')}`;
+    if (m > 0) return `${m}${t('min')} ${s}${t('sec')}`;
+    return `${s}${t('sec')}`;
+  };
 
   const renderHeader = () => (
     // Z-Index increased to z-40 to ensure it stays above content animations like breathing circle (z-10)
@@ -764,7 +782,11 @@ function App() {
     </header>
   );
 
-  const renderIdle = () => (
+  const renderIdle = () => {
+    // Calculate total training time
+    const totalSeconds = history.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
+
+    return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 w-full max-w-5xl mx-auto relative">
       
       <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 mb-12">
@@ -813,7 +835,7 @@ function App() {
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-1000 delay-200">
           
           {/* Left Col: Chart */}
-          <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative">
+          <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
                 <History size={18} /> {t('historyTitle')}
@@ -841,6 +863,15 @@ function App() {
               </div>
             </div>
             <HistoryChart sessions={history} />
+            
+            {/* Total Time Stats */}
+            <div className="mt-4 pt-4 border-t border-slate-800 flex justify-end">
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
+                <Clock size={14} />
+                <span>{t('totalTime')}:</span>
+                <span className="text-blue-400 font-bold">{formatDuration(totalSeconds)}</span>
+              </div>
+            </div>
           </div>
 
           {/* Right Col: Coach Report or Placeholder */}
@@ -906,7 +937,8 @@ function App() {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderViewing = () => (
     <div className="max-w-6xl mx-auto p-4 w-full min-h-[70vh] flex flex-col">
@@ -982,6 +1014,12 @@ function App() {
                   {currentSession.aiScore}%
                 </span>
              </div>
+             {currentSession.durationSeconds !== undefined && (
+               <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 flex items-center gap-2 text-slate-300">
+                 <Timer size={16} className="text-blue-400" />
+                 <span className="text-sm font-mono font-bold">{formatDuration(currentSession.durationSeconds)}</span>
+               </div>
+             )}
              <button
                onClick={() => {
                  sessionRef.current = false;

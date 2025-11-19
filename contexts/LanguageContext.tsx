@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 type Language = 'en' | 'si';
 
@@ -36,6 +36,7 @@ const translations = {
     "generateReport": "Generate Report",
     "regenerateReport": "Refresh Analysis",
     "noHistory": "No history yet.",
+    "totalTime": "Total Training Time",
 
     // Chat
     "chatTitle": "Coach Assistant",
@@ -103,6 +104,9 @@ const translations = {
     "aiAnalysis": "AI Analysis",
     "trendTitle": "Performance Trend",
     "accuracyTrend": "Accuracy Trend",
+    "duration": "Duration",
+    "min": "m",
+    "sec": "s",
 
     // Auth Modal
     "welcomeBackAuth": "Welcome Back",
@@ -154,6 +158,7 @@ const translations = {
     "generateReport": "වාර්තාව සදන්න",
     "regenerateReport": "වාර්තාව අලුත් කරන්න",
     "noHistory": "තවම ඉතිහාසයක් නැත.",
+    "totalTime": "මුළු පුහුණු කාලය",
 
     // Chat
     "chatTitle": "පුහුණුකරු සහායක",
@@ -221,6 +226,9 @@ const translations = {
     "aiAnalysis": "AI විශ්ලේෂණය",
     "trendTitle": "කාර්ය සාධන ප්‍රවණතාවය",
     "accuracyTrend": "නිරවද්‍යතා ප්‍රවණතාවය",
+    "duration": "කාලය",
+    "min": "විනාඩි",
+    "sec": "තත්",
 
     // Auth Modal
     "welcomeBackAuth": "නැවත සාදරයෙන් පිළිගනිමු",
@@ -250,7 +258,16 @@ const translations = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>(() => {
+    // Initialize language from LocalStorage if available
+    const saved = localStorage.getItem('appLanguage');
+    return (saved === 'en' || saved === 'si') ? saved : 'en';
+  });
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('appLanguage', lang);
+  };
 
   const t = (key: string): string => {
     return translations[language][key as keyof typeof translations['en']] || key;
