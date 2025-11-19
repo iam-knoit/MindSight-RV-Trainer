@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server } from 'lucide-react';
 import { SessionState, SessionData, TargetImage } from './types';
 import { analyzeSession, generateTargetImage } from './services/geminiService';
+import { auth, signInWithGoogle, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import HistoryChart from './components/HistoryChart';
 
@@ -18,7 +20,7 @@ const STEPS = [
   { id: 4, title: "Review", icon: CheckCircle },
 ];
 
-// --- SUB-COMPONENTS (Defined outside to prevent re-mounting) ---
+// --- SUB-COMPONENTS ---
 
 interface Step1Props {
   coordinate: string;
@@ -137,6 +139,7 @@ const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack }) 
 
 
 function App() {
+  const [user, setUser] = useState<User | null>(null);
   const [state, setState] = useState<SessionState>(SessionState.IDLE);
   const [step, setStep] = useState(1);
   
@@ -144,25 +147,98 @@ function App() {
   const [target, setTarget] = useState<TargetImage | null>(null);
   const [userNotes, setUserNotes] = useState('');
   const [userSketch, setUserSketch] = useState<string | null>(null);
+  
   const [history, setHistory] = useState<SessionData[]>([]);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("INITIALIZING...");
+  
+  const [authError, setAuthError] = useState<{title: string, domain: string, isFileProtocol?: boolean} | null>(null);
+
+  // Auth State Observer
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) {
+        setHistory([]); // Clear history on logout
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Database Sync Observer
+  useEffect(() => {
+    if (user) {
+      const unsubscribe = subscribeToHistory(user.uid, (sessions) => {
+        setHistory(sessions);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  const handleLogin = async () => {
+    setAuthError(null);
+
+    // Check for file protocol which prevents Firebase Auth
+    if (window.location.protocol === 'file:') {
+      setAuthError({
+        title: "Invalid Protocol (File)",
+        domain: "You are running this file directly from your computer.",
+        isFileProtocol: true
+      });
+      return;
+    }
+
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      console.error("Login failed", error);
+      if (error?.code === 'auth/unauthorized-domain') {
+        // Robustly detect the domain to display to the user
+        let detectedDomain = window.location.hostname;
+        
+        // If hostname is empty (can happen in some envs), try host or fallback
+        if (!detectedDomain) {
+            detectedDomain = window.location.host || "localhost";
+        }
+
+        setAuthError({
+          title: "Unauthorized Domain",
+          domain: detectedDomain
+        });
+      } else if (error?.code === 'auth/popup-closed-by-user') {
+        // User closed popup, ignore
+      } else {
+        setAuthError({
+            title: "Login Error",
+            domain: error.message || "Unknown error occurred"
+        });
+      }
+    }
+  };
+
+  const clearHistory = () => {
+    if (window.confirm("Currently, history can only be cleared manually from the database for safety.")) {
+      // Placeholder
+    }
+  };
 
   // Start a new session
   const startSession = async () => {
+    if (!user) {
+      await handleLogin();
+      return; 
+    }
     setIsLoading(true);
     setLoadingMessage("FETCHING ONLINE TARGET...");
     try {
       const newCoord = generateCoordinate();
       setCoordinate(newCoord);
       
-      // Reset Session Data
       setUserNotes('');
       setUserSketch(null);
       setStep(1);
 
-      // Fetch Target
       const targetData = await generateTargetImage();
       setTarget(targetData);
       
@@ -177,7 +253,7 @@ function App() {
 
   // Submit session for analysis
   const submitSession = async () => {
-    if (!target) return;
+    if (!target || !user) return;
     setState(SessionState.ANALYZING);
     
     try {
@@ -196,12 +272,13 @@ function App() {
       };
 
       setCurrentSession(newSession);
-      setHistory(prev => [...prev, newSession]);
+      await saveSessionToCloud(user.uid, newSession);
+      
       setState(SessionState.FEEDBACK);
     } catch (e) {
       console.error(e);
       alert("Analysis failed.");
-      setState(SessionState.VIEWING); // Go back to let them retry
+      setState(SessionState.VIEWING); 
     }
   };
 
@@ -209,11 +286,9 @@ function App() {
     setUserSketch(base64);
   }, []);
 
-  // Navigation Helpers
   const nextStep = () => setStep(s => Math.min(s + 1, 4));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
-  // Render Methods
   const renderHeader = () => (
     <header className="w-full p-6 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -229,47 +304,139 @@ function App() {
           </div>
         </div>
         
-        {state !== SessionState.IDLE && (
-           <div className="flex items-center gap-4">
-             <div className="hidden md:flex items-center gap-2">
-               {STEPS.map((s) => (
-                 <div key={s.id} className={`h-2 w-2 rounded-full ${state === SessionState.VIEWING && step >= s.id ? 'bg-blue-500' : 'bg-slate-700'}`} />
-               ))}
+        <div className="flex items-center gap-6">
+          {state !== SessionState.IDLE && (
+             <div className="hidden md:flex items-center gap-4">
+               <div className="flex items-center gap-2">
+                 {STEPS.map((s) => (
+                   <div key={s.id} className={`h-2 w-2 rounded-full ${state === SessionState.VIEWING && step >= s.id ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                 ))}
+               </div>
+               <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 font-mono text-cyan-400 animate-pulse">
+                 TRN: {coordinate}
+               </div>
              </div>
-             <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 font-mono text-cyan-400 animate-pulse">
-               TRN: {coordinate}
-             </div>
-           </div>
-        )}
+          )}
+
+          {user ? (
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex flex-col items-end">
+                 <span className="text-xs text-slate-400">Operator</span>
+                 <span className="text-sm font-semibold text-slate-200">{user.displayName}</span>
+              </div>
+              <img src={user.photoURL || ''} alt="User" className="w-8 h-8 rounded-full border border-slate-600" />
+              <button onClick={logOut} className="p-2 text-slate-400 hover:text-red-400 transition-colors" title="Sign Out">
+                <LogOut size={20} />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={handleLogin} 
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-600 transition-all"
+            >
+              <LogIn size={16} />
+              <span className="text-sm font-semibold">Login</span>
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
 
   const renderIdle = () => (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 border border-slate-700 relative group">
-        <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-all"></div>
-        <Brain className="text-blue-400 w-12 h-12" />
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 w-full max-w-5xl mx-auto relative">
       
-      <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Train?</h2>
-      <p className="text-slate-400 max-w-md mb-8 leading-relaxed">
-        Initialize a blind session. The system will select a random target image from the web.
-        Follow the 4-step protocol to record your data before feedback.
-      </p>
-      
-      <button
-        onClick={startSession}
-        disabled={isLoading}
-        className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? (
-          <Sparkles className="animate-spin" />
+      {/* Auth Error Banner */}
+      {authError && (
+        <div className="w-full max-w-xl mb-8 bg-red-900/20 border border-red-500/50 rounded-xl p-6 animate-in slide-in-from-top-4">
+          <div className="flex justify-between items-start mb-2">
+             <h3 className="text-red-400 font-bold flex items-center gap-2">
+               <AlertTriangle size={20} />
+               {authError.title}
+             </h3>
+             <button onClick={() => setAuthError(null)} className="text-red-400 hover:text-red-200">
+               <X size={20} />
+             </button>
+          </div>
+          
+          {authError.isFileProtocol ? (
+             <div className="text-slate-300 text-sm mb-2 space-y-2">
+                 <p>Google Login <strong>requires a web server</strong>. It does not work when opening <code className="bg-black/30 px-1 rounded">.html</code> files directly.</p>
+                 <p className="flex items-center gap-2"><Server size={14}/> <strong>Fix:</strong> Run a local server (e.g., <code className="text-yellow-400">npm start</code>, <code className="text-yellow-400">vite</code>, or VS Code Live Server).</p>
+             </div>
+          ) : (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                 Firebase Authentication blocked this request. You must add the following domain to your Firebase Console.
+              </p>
+              <div className="bg-black/40 p-3 rounded-lg flex items-center justify-between group cursor-pointer border border-red-500/20"
+                 onClick={() => {
+                   navigator.clipboard.writeText(authError.domain);
+                   alert("Domain copied to clipboard!");
+                 }}>
+                <code className="text-red-200 font-mono text-sm break-all">
+                    {authError.domain}
+                </code>
+                <Copy size={16} className="text-slate-500 group-hover:text-white transition-colors flex-shrink-0 ml-2" />
+              </div>
+              <div className="mt-4 text-xs text-slate-500">
+                Go to: Firebase Console &gt; Authentication &gt; Settings &gt; Authorized Domains
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 mb-12">
+        <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 mx-auto border border-slate-700 relative group">
+          <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-all"></div>
+          <Brain className="text-blue-400 w-12 h-12" />
+        </div>
+        
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          {user ? `Welcome back, ${user.displayName?.split(' ')[0]}` : "Ready to Train?"}
+        </h2>
+        <p className="text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
+          {user 
+            ? "Initialize a blind session. Follow the 4-step protocol to record your data before feedback."
+            : "Sign in to track your progress across devices and analyze your Remote Viewing sessions with AI."}
+        </p>
+        
+        {user ? (
+          <button
+            onClick={startSession}
+            disabled={isLoading}
+            className="mx-auto group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <Sparkles className="animate-spin" />
+            ) : (
+              <Play className="fill-white" size={20} />
+            )}
+            {isLoading ? loadingMessage : "START NEW SESSION"}
+          </button>
         ) : (
-          <Play className="fill-white" size={20} />
+          <button
+            onClick={handleLogin}
+            className="mx-auto px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all flex items-center gap-3"
+          >
+             <UserIcon size={20} />
+             SIGN IN WITH GOOGLE
+          </button>
         )}
-        {isLoading ? loadingMessage : "START SESSION"}
-      </button>
+      </div>
+
+      {/* Past History Section */}
+      {user && history.length > 0 && (
+        <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 p-6 animate-in fade-in duration-1000 delay-200">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
+              <History size={18} /> Performance History
+            </h3>
+          </div>
+          <HistoryChart sessions={history} />
+        </div>
+      )}
     </div>
   );
 
@@ -395,8 +562,11 @@ function App() {
              {currentSession.aiFeedback}
            </p>
         </div>
-
-        <HistoryChart sessions={history} />
+        
+        <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
+          <h3 className="text-lg font-semibold text-slate-300 mb-4">Performance Trend</h3>
+          <HistoryChart sessions={history} />
+        </div>
       </div>
     );
   };
