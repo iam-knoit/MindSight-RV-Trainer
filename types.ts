@@ -33,3 +33,10 @@ export interface CoachReport {
   weaknesses: string[];
   trainingTips: string[];
 }
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+  timestamp: number;
+}

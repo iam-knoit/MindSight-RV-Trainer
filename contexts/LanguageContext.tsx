@@ -34,7 +34,16 @@ const translations = {
     "aiCoachUnlock": "Complete 3 sessions to unlock personalized training insights.",
     "analyzing": "Analyzing...",
     "generateReport": "Generate Report",
+    "regenerateReport": "Refresh Analysis",
     "noHistory": "No history yet.",
+
+    // Chat
+    "chatTitle": "Coach Assistant",
+    "chatPlaceholder": "Ask about your progress or RV techniques...",
+    "chatWelcome": "Hello! I am your Remote Viewing coach. I have reviewed your session history. How can I help you improve today?",
+    "chatSend": "Send",
+    "chatClose": "Close Chat",
+    "openChat": "Chat with Coach",
 
     // Steps
     "stepFocus": "Focus",
@@ -60,6 +69,9 @@ const translations = {
     "placeholderNotes": "e.g., Red, rough texture, metallic smell, sense of motion...",
     "btnNextVisuals": "Next: Visuals",
     "btnBack": "Back",
+    "helperBtn": "Sensory Helper",
+    "helperClose": "Close Helper",
+    "helperTip": "Click words to add them to your notes",
 
     // Step 3: Sketch
     "stage2Title": "Stage 2: Visual Sketch",
@@ -140,7 +152,16 @@ const translations = {
     "aiCoachUnlock": "පුද්ගලීකරණය කළ පුහුණු උපදෙස් ලබා ගැනීමට සැසි 3ක් සම්පූර්ණ කරන්න.",
     "analyzing": "විශ්ලේෂණය කරමින්...",
     "generateReport": "වාර්තාව සදන්න",
+    "regenerateReport": "වාර්තාව අලුත් කරන්න",
     "noHistory": "තවම ඉතිහාසයක් නැත.",
+
+    // Chat
+    "chatTitle": "පුහුණුකරු සහායක",
+    "chatPlaceholder": "ඔබේ ප්‍රගතිය ගැන හෝ RV ක්‍රම ගැන අසන්න...",
+    "chatWelcome": "ආයුබෝවන්! මම ඔබේ දුරස්ථ නිරීක්ෂණ පුහුණුකරු වෙමි. මම ඔබේ සැසි ඉතිහාසය සමාලෝචනය කළෙමි. මම ඔබට උදව් කරන්නේ කෙසේද?",
+    "chatSend": "යවන්න",
+    "chatClose": "සංවාදය වසන්න",
+    "openChat": "පුහුණුකරු සමඟ කතාබහ",
 
     // Steps
     "stepFocus": "අවධානය",
@@ -166,6 +187,9 @@ const translations = {
     "placeholderNotes": "උදා: රතු, රළු මතුපිට, ලෝහමය සුවඳ, චලනය...",
     "btnNextVisuals": "ඊළඟ: දෘශ්‍ය රූප",
     "btnBack": "ආපසු",
+    "helperBtn": "වචන සහායක",
+    "helperClose": "සහායක වසන්න",
+    "helperTip": "ඔබේ සටහන් වලට එකතු කිරීමට වචන මත ක්ලික් කරන්න",
 
     // Step 3: Sketch
     "stage2Title": "අදියර 2: දෘශ්‍ය සිතුවම",

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import HistoryChart from './components/HistoryChart';
+import CoachChat from './components/CoachChat';
 import { useLanguage } from './contexts/LanguageContext';
 
 const generateCoordinate = () => {
@@ -176,31 +177,128 @@ interface Step2Props {
 }
 
 const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBack }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [showHelper, setShowHelper] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>("Colors");
+
+  // Descriptor data for the helper
+  const descriptors: Record<string, Record<string, string[]>> = {
+    en: {
+      "Colors": ["Red", "Blue", "Green", "Yellow", "Black", "White", "Grey", "Brown", "Bright", "Dark", "Shiny", "Matte"],
+      "Textures": ["Rough", "Smooth", "Hard", "Soft", "Wet", "Dry", "Gritty", "Polished", "Fuzzy", "Sharp"],
+      "Shapes": ["Round", "Square", "Triangular", "Flat", "Tall", "Wide", "Angular", "Curved", "Jagged", "Symmetrical"],
+      "Dimensions": ["Large", "Small", "Heavy", "Light", "Hollow", "Solid", "Dense", "Spacious"],
+      "Smell/Taste": ["Sweet", "Sour", "Bitter", "Salty", "Metallic", "Smoky", "Fresh", "Musty", "Chemical"],
+      "Dynamics": ["Static", "Moving", "Fast", "Slow", "Rotating", "Flowing", "Vibrating", "Explosive"],
+      "Ambience": ["Natural", "Man-made", "Indoors", "Outdoors", "Urban", "Rural", "Crowded", "Empty"]
+    },
+    si: {
+      "වර්ණ": ["රතු", "නිල්", "කොළ", "කහ", "කළු", "සුදු", "අළු", "දුඹුරු", "දීප්තිමත්", "අඳුරු", "දිලිසෙන", "මැට්"],
+      "මතුපිට": ["රළු", "සිනිඳු", "තද", "මෘදු", "තෙත්", "වියළි", "බොරළු සහිත", "ඔප දැමූ", "සුමුදු", "තියුණු"],
+      "හැඩතල": ["රවුම්", "කොටු", "ත්‍රිකෝණාකාර", "පැතලි", "උස", "පළල්", "කෝණික", "වක්‍ර", "දත් සහිත", "සමමිතික"],
+      "මානයන්": ["විශාල", "කුඩා", "බර", "සැහැල්ලු", "කුහර", "ඝන", "ඝනකම", "ඉඩකඩ සහිත"],
+      "සුවඳ/රස": ["පැණිරස", "ඇඹුල්", "තිත්ත", "ලුණු", "ලෝහමය", "දුම්", "නැවුම්", "පුස්", "රසායනික"],
+      "චලනය": ["නිශ්චල", "චලනය වන", "වේගවත්", "මන්දගාමී", "කරකැවෙන", "ගලා යන", "කම්පන", "පුපුරන සුලු"],
+      "පරිසරය": ["ස්වභාවික", "මිනිසා සාදන ලද", "ගෘහස්ථ", "එළිමහන්", "නාගරික", "ග්‍රාමීය", "ජනාකීර්ණ", "හිස්"]
+    }
+  };
+
+  const currentDescriptors = descriptors[language] || descriptors['en'];
+  const categories = Object.keys(currentDescriptors);
+
+  useEffect(() => {
+    // Reset active category when language changes to avoid undefined state
+    if (!categories.includes(activeCategory)) {
+      setActiveCategory(categories[0]);
+    }
+  }, [language, categories, activeCategory]);
+
+  const addWord = (word: string) => {
+    const separator = notes.length > 0 && !notes.endsWith(' ') ? ', ' : '';
+    onChange(notes + separator + word);
+  };
+
   return (
-    <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-8 duration-300">
+    <div className="max-w-4xl mx-auto w-full space-y-6 animate-in slide-in-from-right-8 duration-300">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-white mb-2">{t('stage1Title')}</h2>
         <p className="text-slate-400">{t('stage1Desc')}</p>
       </div>
 
-      <div className="bg-slate-800/50 p-1 rounded-2xl border border-slate-700 focus-within:border-blue-500/50 transition-colors">
-        <textarea
-          className="w-full h-64 bg-slate-900 rounded-xl p-6 text-lg text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none"
-          placeholder={t('placeholderNotes')}
-          value={notes}
-          onChange={(e) => onChange(e.target.value)}
-          autoFocus
-        />
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-slate-800/50 p-1 rounded-2xl border border-slate-700 focus-within:border-blue-500/50 transition-colors h-full">
+            <textarea
+              className="w-full h-80 bg-slate-900 rounded-xl p-6 text-lg text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none"
+              placeholder={t('placeholderNotes')}
+              value={notes}
+              onChange={(e) => onChange(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-between">
+            <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
+              <ArrowLeft size={18} /> {t('btnBack')}
+            </button>
+            <button onClick={onNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
+              {t('btnNextVisuals')} <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
 
-      <div className="flex justify-between pt-4">
-        <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
-          <ArrowLeft size={18} /> {t('btnBack')}
-        </button>
-        <button onClick={onNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
-          {t('btnNextVisuals')} <ArrowRight size={18} />
-        </button>
+        {/* Helper Sidebar / Toggle */}
+        <div className="lg:col-span-1">
+          {!showHelper ? (
+             <button 
+               onClick={() => setShowHelper(true)}
+               className="w-full h-full min-h-[100px] rounded-2xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-900/10 transition-all group"
+             >
+               <BookOpen size={32} className="mb-2 group-hover:scale-110 transition-transform" />
+               <span className="font-semibold">{t('helperBtn')}</span>
+             </button>
+          ) : (
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 h-full max-h-[500px] flex flex-col animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                 <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <BookOpen size={14} className="text-blue-400"/> {t('helperBtn')}
+                 </h3>
+                 <button onClick={() => setShowHelper(false)} className="text-slate-500 hover:text-white">
+                   <X size={16} />
+                 </button>
+              </div>
+              
+              <p className="text-xs text-slate-500 mb-3">{t('helperTip')}</p>
+
+              {/* Categories Tabs */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${activeCategory === cat ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Words Grid */}
+              <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar">
+                 <div className="grid grid-cols-2 gap-2">
+                    {currentDescriptors[activeCategory]?.map(word => (
+                      <button
+                        key={word}
+                        onClick={() => addWord(word)}
+                        className="text-left px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-blue-300 text-xs transition-colors border border-slate-700/50"
+                      >
+                        {word}
+                      </button>
+                    ))}
+                 </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -421,6 +519,7 @@ function App() {
   const [showExitConfirm, setShowExitConfirm] = useState(false); // Confirmation modal state
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   // Ref to track if the session is currently active/valid.
   // This prevents race conditions where user exits (goes to IDLE) but async analysis finishes and forces FEEDBACK state.
@@ -714,21 +813,32 @@ function App() {
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-1000 delay-200">
           
           {/* Left Col: Chart */}
-          <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
+          <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
                 <History size={18} /> {t('historyTitle')}
               </h3>
-              {history.length >= 3 && !coachReport && (
+              <div className="flex gap-2">
+                 {/* Chat Button */}
                  <button 
-                   onClick={runCoachAnalysis} 
-                   disabled={analyzingHistory}
-                   className="text-xs bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 px-3 py-1.5 rounded-full border border-blue-800/50 transition-all flex items-center gap-2"
+                   onClick={() => setShowChat(true)}
+                   className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
                  >
-                   {analyzingHistory ? <RefreshCw className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                   {t('aiCoachBtn')}
+                   <MessageSquareText size={12} />
+                   {t('openChat')}
                  </button>
-              )}
+                 
+                 {history.length >= 3 && !coachReport && (
+                   <button 
+                     onClick={runCoachAnalysis} 
+                     disabled={analyzingHistory}
+                     className="text-xs bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 px-3 py-1.5 rounded-full border border-blue-800/50 transition-all flex items-center gap-2"
+                   >
+                     {analyzingHistory ? <RefreshCw className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                     {t('aiCoachBtn')}
+                   </button>
+                )}
+              </div>
             </div>
             <HistoryChart sessions={history} />
           </div>
@@ -737,8 +847,19 @@ function App() {
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 flex flex-col">
             {coachReport ? (
               <div className="space-y-4 animate-in slide-in-from-right duration-500">
-                <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-xs tracking-widest mb-2">
-                   <Brain size={14} /> {t('coachReport')}
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-xs tracking-widest">
+                     <Brain size={14} /> {t('coachReport')}
+                  </div>
+                  <button 
+                    onClick={runCoachAnalysis} 
+                    disabled={analyzingHistory}
+                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                    title={t('regenerateReport')}
+                  >
+                    <RefreshCw size={12} className={analyzingHistory ? "animate-spin" : ""} />
+                    {analyzingHistory ? t('analyzing') : t('regenerateReport')}
+                  </button>
                 </div>
                 
                 <p className="text-sm text-slate-300 italic">"{coachReport.trendSummary}"</p>
@@ -940,6 +1061,15 @@ function App() {
         onCancel={() => setShowExitConfirm(false)}
       />
       
+      {/* Chat Interface */}
+      {user && (
+        <CoachChat 
+          isOpen={showChat} 
+          onClose={() => setShowChat(false)} 
+          history={history}
+        />
+      )}
+
       {renderHeader()}
       
       <main className="relative z-0 flex-grow flex flex-col">

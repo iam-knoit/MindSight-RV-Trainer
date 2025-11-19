@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { ScoringResult, SessionData, CoachReport } from '../types';
 
 const cleanBase64 = (data: string) => {
@@ -229,4 +229,47 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
     console.error("Coach Report failed:", error);
     throw error;
   }
+};
+
+export const createCoachChat = (history: SessionData[], language: 'en' | 'si' = 'en'): Chat => {
+  if (!process.env.API_KEY) {
+    throw new Error("API Key is missing");
+  }
+
+  const recentHistory = history.slice(-15);
+  const historyText = recentHistory.map((s, i) => `
+    Date: ${new Date(s.timestamp).toLocaleDateString()}
+    Score: ${s.aiScore}/100
+    Notes: "${s.userNotes.substring(0, 50)}..."
+    Feedback: "${s.aiFeedback}"
+  `).join('\n');
+
+  const langInstruction = language === 'si' 
+    ? "Respond in Sinhala language. Use Sinhala script." 
+    : "Respond in English.";
+
+  const systemInstruction = `
+    You are a professional Remote Viewing (RV) Instructor. 
+    You are talking to a student who is practicing using the MindSight app.
+    
+    STUDENT HISTORY:
+    ${historyText}
+    
+    YOUR ROLE:
+    1. Answer questions about Remote Viewing protocols (Coordinate Remote Viewing - CRV).
+    2. Give specific advice based on the student's history provided above.
+    3. Be encouraging but objective.
+    4. Keep answers concise (max 3 paragraphs).
+    
+    ${langInstruction}
+  `;
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  return ai.chats.create({
+    model: 'gemini-2.5-flash',
+    config: {
+      systemInstruction: systemInstruction
+    }
+  });
 };
