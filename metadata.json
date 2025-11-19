@@ -1,0 +1,5 @@
+{
+  "name": "MindSight RV Trainer",
+  "description": "A professional Remote Viewing training tool using Gemini 2.5 Flash to analyze and score sessions by comparing user sketches and descriptions against blind target images.",
+  "requestFramePermissions": []
+}
