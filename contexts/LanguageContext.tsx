@@ -46,6 +46,12 @@ const translations = {
     "trn": "Target Reference Number",
     "focusTitle": "Target Reference Number",
     "focusDesc": "Relax. Clear your mind of expectations. Focus only on the coordinate. Allow information to drift into your awareness gently.",
+    "focusTip": "Click the button below to start a guided breathing sequence to help you enter the Alpha state.",
+    "startFocusSeq": "START FOCUS SEQUENCE",
+    "stopFocusSeq": "I AM READY",
+    "breatheIn": "Breathe In...",
+    "breatheOut": "Breathe Out...",
+    "breatheHold": "Hold...",
     "btnFocused": "I am focused",
 
     // Step 2: Impressions
@@ -142,6 +148,12 @@ const translations = {
     "trn": "ඉලක්ක යොමු අංකය",
     "focusTitle": "ඉලක්ක යොමු අංකය (TRN)",
     "focusDesc": "සන්සුන් වන්න. අපේක්ෂාවන්ගෙන් මනස නිදහස් කරන්න. ඛණ්ඩාංකය කෙරෙහි පමණක් අවධානය යොමු කරන්න.",
+    "focusTip": "ඇල්ෆා මට්ටමට ළඟා වීම සඳහා හුස්ම ගැනීමේ අභ්‍යාසය ආරම්භ කිරීමට පහත බොත්තම ක්ලික් කරන්න.",
+    "startFocusSeq": "හුස්ම ගැනීමේ අභ්‍යාසය අරඹන්න",
+    "stopFocusSeq": "මම සූදානම්",
+    "breatheIn": "හුස්ම ගන්න...",
+    "breatheOut": "හුස්ම පිටකරන්න...",
+    "breatheHold": "රඳවා ගන්න...",
     "btnFocused": "මම අවධානය යොමු කළා",
 
     // Step 2: Impressions

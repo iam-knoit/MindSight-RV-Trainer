@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
@@ -25,24 +25,112 @@ interface Step1Props {
 
 const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
   const { t } = useLanguage();
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-in zoom-in-95 duration-500">
-      <div className="space-y-2">
-        <h3 className="text-slate-400 text-sm uppercase tracking-widest">{t('trn')}</h3>
-        <div className="text-6xl md:text-7xl font-mono font-bold text-white tracking-wider drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-          {coordinate}
-        </div>
-      </div>
-      
-      <div className="max-w-lg bg-slate-800/50 p-6 rounded-xl border border-slate-700">
-        <p className="text-lg text-slate-300 leading-relaxed">
-          {t('focusDesc')}
-        </p>
-      </div>
+  const [isFocusing, setIsFocusing] = useState(false);
+  const [breathState, setBreathState] = useState<'in' | 'hold' | 'out'>('in');
+  const [guideText, setGuideText] = useState('');
 
-      <button onClick={onNext} className="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-semibold transition-all flex items-center gap-2">
-        {t('btnFocused')} <ArrowRight size={18} />
-      </button>
+  // Breath cycle timer
+  useEffect(() => {
+    if (!isFocusing) return;
+
+    // Cycle: In (4s) -> Hold (4s) -> Out (6s)
+    let step = 0;
+    const runCycle = () => {
+      if (step === 0) {
+        setBreathState('in');
+        setGuideText(t('breatheIn'));
+        setTimeout(() => { step = 1; runCycle(); }, 4000);
+      } else if (step === 1) {
+        setBreathState('hold');
+        setGuideText(t('breatheHold'));
+        setTimeout(() => { step = 2; runCycle(); }, 4000);
+      } else {
+        setBreathState('out');
+        setGuideText(t('breatheOut'));
+        setTimeout(() => { step = 0; runCycle(); }, 6000);
+      }
+    };
+
+    runCycle();
+    return () => { step = -1; }; // Cleanup logic not strictly needed with timeouts but good practice
+  }, [isFocusing, t]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-in fade-in duration-700">
+      
+      {!isFocusing ? (
+        <>
+          <div className="space-y-2">
+            <h3 className="text-slate-400 text-sm uppercase tracking-widest">{t('trn')}</h3>
+            <div className="text-6xl md:text-7xl font-mono font-bold text-white tracking-wider drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+              {coordinate}
+            </div>
+          </div>
+          
+          <div className="max-w-lg bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+            <p className="text-lg text-slate-300 leading-relaxed mb-4">
+              {t('focusDesc')}
+            </p>
+            <div className="flex items-start gap-3 bg-blue-900/20 p-4 rounded-lg border border-blue-500/30 text-left">
+              <Wind className="text-blue-400 shrink-0 mt-1" size={20} />
+              <p className="text-sm text-blue-200">{t('focusTip')}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4">
+            <button 
+              onClick={() => setIsFocusing(true)} 
+              className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-semibold transition-all flex items-center justify-center gap-2 border border-slate-600"
+            >
+              <Wind size={18} /> {t('startFocusSeq')}
+            </button>
+            <button 
+              onClick={onNext} 
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-semibold transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(37,99,235,0.5)]"
+            >
+              {t('btnFocused')} <ArrowRight size={18} />
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="relative flex flex-col items-center justify-center w-full h-full min-h-[400px]">
+          {/* Breathing Circle Animation */}
+          <div 
+            className={`
+              absolute rounded-full border-2 border-blue-500/30 bg-blue-500/5 blur-xl
+              transition-all ease-in-out
+              ${breathState === 'in' ? 'w-96 h-96 opacity-100 duration-[4000ms]' : ''}
+              ${breathState === 'hold' ? 'w-96 h-96 opacity-80 duration-[200ms]' : ''}
+              ${breathState === 'out' ? 'w-32 h-32 opacity-30 duration-[6000ms]' : ''}
+            `}
+          />
+          
+          {/* Solid Inner Circle */}
+          <div 
+             className={`
+              relative z-10 rounded-full flex items-center justify-center bg-slate-900 border-4 border-slate-800 shadow-2xl
+              transition-all ease-in-out
+              ${breathState === 'in' ? 'w-64 h-64 border-blue-500/50 duration-[4000ms]' : ''}
+              ${breathState === 'hold' ? 'w-64 h-64 border-blue-400 duration-[200ms]' : ''}
+              ${breathState === 'out' ? 'w-64 h-64 border-slate-700 duration-[6000ms]' : ''}
+             `}
+          >
+             <div className="text-center space-y-2">
+                <div className="text-4xl font-mono font-bold text-white">{coordinate}</div>
+                <div className={`text-sm font-bold uppercase tracking-widest transition-colors ${breathState === 'in' ? 'text-blue-400' : breathState === 'out' ? 'text-slate-500' : 'text-white'}`}>
+                  {guideText}
+                </div>
+             </div>
+          </div>
+
+          <button 
+            onClick={onNext}
+            className="absolute bottom-10 px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all border border-slate-600 hover:border-blue-500"
+          >
+            {t('stopFocusSeq')}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
