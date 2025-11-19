@@ -110,6 +110,10 @@ const translations = {
     "strengths": "STRENGTHS",
     "weaknesses": "WEAKNESSES",
     "tip": "TIP",
+
+    // Navigation
+    "confirmExit": "Are you sure you want to exit? Current session data will be lost.",
+    "exitSession": "Exit Session",
   },
   si: {
     // Meta / Global
@@ -212,6 +216,10 @@ const translations = {
     "strengths": "ශක්තීන්",
     "weaknesses": "දුර්වලතා",
     "tip": "උපදෙස්",
+
+    // Navigation
+    "confirmExit": "ඔබට පිටවීමට අවශ්‍ය බව විශ්වාසද? වත්මන් සැසි දත්ත නැති වනු ඇත.",
+    "exitSession": "සැසියෙන් ඉවත් වන්න",
   }
 };
 

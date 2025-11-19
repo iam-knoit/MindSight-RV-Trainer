@@ -369,6 +369,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [state, setState] = useState<SessionState>(SessionState.IDLE);
   const [step, setStep] = useState(1);
+  const [sessionNumber, setSessionNumber] = useState(1);
   
   const [coordinate, setCoordinate] = useState<string>('');
   const [target, setTarget] = useState<TargetImage | null>(null);
@@ -436,6 +437,7 @@ function App() {
       setShowAuthModal(true);
       return; 
     }
+    setSessionNumber(history.length + 1);
     setIsLoading(true);
     setLoadingMessage(t('startSessionLoading'));
     try {
@@ -455,6 +457,21 @@ function App() {
     } finally {
       setIsLoading(false);
       setLoadingMessage(t('startSession'));
+    }
+  };
+
+  const goHome = () => {
+    if (state === SessionState.VIEWING) {
+      if (window.confirm(t('confirmExit'))) {
+        setState(SessionState.IDLE);
+      }
+    } else if (state === SessionState.ANALYZING) {
+       // Warn user during analysis, though ideally we shouldn't interrupt
+       if (window.confirm(t('confirmExit'))) {
+         setState(SessionState.IDLE);
+       }
+    } else {
+      setState(SessionState.IDLE);
     }
   };
 
@@ -499,8 +516,8 @@ function App() {
   const renderHeader = () => (
     <header className="w-full p-6 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
+        <button onClick={goHome} className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left group">
+          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
             <Eye className="text-white" size={20} />
           </div>
           <div>
@@ -509,13 +526,13 @@ function App() {
             </h1>
             <p className="text-xs text-slate-400 font-mono">{t('appSubtitle')}</p>
           </div>
-        </div>
+        </button>
         
         <div className="flex items-center gap-6">
           {state !== SessionState.IDLE && (
              <div className="hidden md:flex items-center gap-4">
                <div className="bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 font-mono text-sm font-bold text-blue-400">
-                  {t('session')} #{history.length + 1}
+                  {t('session')} #{sessionNumber}
                </div>
                <div className="flex items-center gap-2">
                  {STEPS.map((s) => (
@@ -526,6 +543,17 @@ function App() {
                  {t('trn')}: {coordinate}
                </div>
              </div>
+          )}
+          
+          {/* Explicit Exit Button for Mobile/Desktop when in session */}
+          {state === SessionState.VIEWING && (
+            <button
+              onClick={goHome}
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-full transition-colors"
+              title={t('exitSession')}
+            >
+              <XCircle size={20} />
+            </button>
           )}
 
           {/* Language Switcher */}
