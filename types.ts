@@ -26,3 +26,10 @@ export interface ScoringResult {
   score: number;
   feedback: string;
 }
+
+export interface CoachReport {
+  trendSummary: string;
+  strengths: string[];
+  weaknesses: string[];
+  trainingTips: string[];
+}

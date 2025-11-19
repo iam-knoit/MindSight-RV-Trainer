@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ScoringResult } from '../types';
+import { ScoringResult, SessionData, CoachReport } from '../types';
 
 const cleanBase64 = (data: string) => {
     // Remove data:image/xyz;base64, prefix if present
@@ -154,5 +154,66 @@ export const generateTargetImage = async (): Promise<{ url: string; base64: stri
   } catch (e) {
     console.error("Target Acquisition Failed", e);
     throw new Error("Could not load a target image from online source.");
+  }
+};
+
+export const generateCoachReport = async (history: SessionData[]): Promise<CoachReport> => {
+  if (!process.env.API_KEY) {
+    throw new Error("API Key is missing");
+  }
+
+  // Take the last 20 sessions to avoid hitting token limits
+  const recentHistory = history.slice(-20);
+
+  // Format history into a readable summary for the AI
+  const historyText = recentHistory.map((s, i) => `
+    Session ${i + 1}:
+    - Score: ${s.aiScore}/100
+    - AI Feedback: "${s.aiFeedback}"
+  `).join('\n');
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const prompt = `
+    You are a Remote Viewing Instructor. Analyze the following training history for a student.
+    Identify patterns in their performance. Are they improving? Do they consistently miss specific types of data (e.g., colors, shapes, motion)?
+    
+    HISTORY LOG:
+    ${historyText}
+    
+    Based on this, provide a JSON report with:
+    1. trendSummary: A 1-sentence overview of their progress.
+    2. strengths: A list of 2-3 things they are doing well.
+    3. weaknesses: A list of 2-3 things they need to improve.
+    4. trainingTips: A list of 2-3 specific actionable exercises to improve.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            trendSummary: { type: Type.STRING },
+            strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+            weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
+            trainingTips: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["trendSummary", "strengths", "weaknesses", "trainingTips"]
+        }
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as CoachReport;
+    } else {
+      throw new Error("Empty response from AI Coach");
+    }
+  } catch (error) {
+    console.error("Coach Report failed:", error);
+    throw error;
   }
 };

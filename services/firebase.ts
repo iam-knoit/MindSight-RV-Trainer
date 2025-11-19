@@ -1,10 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut, 
-  onAuthStateChanged,
+  updateProfile,
   User
 } from 'firebase/auth';
 import { 
@@ -12,7 +12,6 @@ import {
   collection, 
   addDoc, 
   query, 
-  where, 
   orderBy, 
   onSnapshot,
   Timestamp 
@@ -34,15 +33,29 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
 
 // --- Auth Functions ---
 
-export const signInWithGoogle = async () => {
+export const registerWithEmail = async (email: string, password: string, name: string) => {
   try {
-    await signInWithPopup(auth, googleProvider);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // Set the display name immediately after registration
+    await updateProfile(userCredential.user, {
+      displayName: name
+    });
+    return userCredential.user;
   } catch (error) {
-    console.error("Error signing in with Google", error);
+    console.error("Error registering", error);
+    throw error;
+  }
+};
+
+export const loginWithEmail = async (email: string, password: string) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error) {
+    console.error("Error signing in", error);
     throw error;
   }
 };

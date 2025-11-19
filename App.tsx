@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server } from 'lucide-react';
-import { SessionState, SessionData, TargetImage } from './types';
-import { analyzeSession, generateTargetImage } from './services/geminiService';
-import { auth, signInWithGoogle, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle } from 'lucide-react';
+import { SessionState, SessionData, TargetImage, CoachReport } from './types';
+import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
+import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import HistoryChart from './components/HistoryChart';
@@ -137,6 +137,140 @@ const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack }) 
   </div>
 );
 
+interface AuthModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        await loginWithEmail(email, password);
+      } else {
+        if (!name) throw new Error("Name is required for registration.");
+        await registerWithEmail(email, password, name);
+      }
+      onClose();
+    } catch (err: any) {
+      let msg = "Authentication failed.";
+      if (err.code === 'auth/invalid-email') msg = "Invalid email address.";
+      if (err.code === 'auth/user-not-found') msg = "No account found with this email.";
+      if (err.code === 'auth/wrong-password') msg = "Incorrect password.";
+      if (err.code === 'auth/email-already-in-use') msg = "Email is already registered.";
+      if (err.code === 'auth/weak-password') msg = "Password must be at least 6 characters.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
+        >
+          <X size={20} />
+        </button>
+
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+          {isLogin ? "Welcome Back" : "Create Account"}
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-900/20 border border-red-500/50 text-red-300 p-3 rounded-lg text-sm flex items-center gap-2">
+              <AlertTriangle size={16} /> {error}
+            </div>
+          )}
+
+          {!isLogin && (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-400 uppercase">Display Name</label>
+              <div className="relative">
+                <UserIcon className="absolute left-3 top-3 text-slate-500" size={18} />
+                <input 
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="Your Name"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 text-slate-500" size={18} />
+              <input 
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="name@example.com"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase">Password</label>
+             <div className="relative">
+              <Lock className="absolute left-3 top-3 text-slate-500" size={18} />
+              <input 
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all shadow-lg shadow-blue-900/20 mt-4 disabled:opacity-50"
+          >
+            {loading ? (
+              <RefreshCw className="animate-spin mx-auto" size={20}/>
+            ) : (
+              isLogin ? "Sign In" : "Sign Up"
+            )}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-slate-400 text-sm">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button 
+              onClick={() => setIsLogin(!isLogin)} 
+              className="text-blue-400 hover:text-blue-300 font-semibold"
+            >
+              {isLogin ? "Sign Up" : "Sign In"}
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -153,7 +287,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("INITIALIZING...");
   
-  const [authError, setAuthError] = useState<{title: string, domain: string, isFileProtocol?: boolean} | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
+  const [analyzingHistory, setAnalyzingHistory] = useState(false);
 
   // Auth State Observer
   useEffect(() => {
@@ -161,6 +297,7 @@ function App() {
       setUser(currentUser);
       if (!currentUser) {
         setHistory([]); // Clear history on logout
+        setCoachReport(null);
       }
     });
     return () => unsubscribe();
@@ -176,57 +313,27 @@ function App() {
     }
   }, [user]);
 
-  const handleLogin = async () => {
-    setAuthError(null);
-
-    // Check for file protocol which prevents Firebase Auth
-    if (window.location.protocol === 'file:') {
-      setAuthError({
-        title: "Invalid Protocol (File)",
-        domain: "You are running this file directly from your computer.",
-        isFileProtocol: true
-      });
+  const runCoachAnalysis = async () => {
+    if (history.length < 3) {
+      alert("Complete at least 3 sessions to unlock AI Coaching.");
       return;
     }
-
+    setAnalyzingHistory(true);
     try {
-      await signInWithGoogle();
-    } catch (error: any) {
-      console.error("Login failed", error);
-      if (error?.code === 'auth/unauthorized-domain') {
-        // Robustly detect the domain to display to the user
-        let detectedDomain = window.location.hostname;
-        
-        // If hostname is empty (can happen in some envs), try host or fallback
-        if (!detectedDomain) {
-            detectedDomain = window.location.host || "localhost";
-        }
-
-        setAuthError({
-          title: "Unauthorized Domain",
-          domain: detectedDomain
-        });
-      } else if (error?.code === 'auth/popup-closed-by-user') {
-        // User closed popup, ignore
-      } else {
-        setAuthError({
-            title: "Login Error",
-            domain: error.message || "Unknown error occurred"
-        });
-      }
-    }
-  };
-
-  const clearHistory = () => {
-    if (window.confirm("Currently, history can only be cleared manually from the database for safety.")) {
-      // Placeholder
+      const report = await generateCoachReport(history);
+      setCoachReport(report);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate coaching report.");
+    } finally {
+      setAnalyzingHistory(false);
     }
   };
 
   // Start a new session
   const startSession = async () => {
     if (!user) {
-      await handleLogin();
+      setShowAuthModal(true);
       return; 
     }
     setIsLoading(true);
@@ -322,16 +429,22 @@ function App() {
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex flex-col items-end">
                  <span className="text-xs text-slate-400">Operator</span>
-                 <span className="text-sm font-semibold text-slate-200">{user.displayName}</span>
+                 <span className="text-sm font-semibold text-slate-200">{user.displayName || "Viewer"}</span>
               </div>
-              <img src={user.photoURL || ''} alt="User" className="w-8 h-8 rounded-full border border-slate-600" />
+              {user.photoURL ? (
+                  <img src={user.photoURL} alt="User" className="w-8 h-8 rounded-full border border-slate-600" />
+              ) : (
+                  <div className="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-slate-300">
+                      <UserIcon size={16} />
+                  </div>
+              )}
               <button onClick={logOut} className="p-2 text-slate-400 hover:text-red-400 transition-colors" title="Sign Out">
                 <LogOut size={20} />
               </button>
             </div>
           ) : (
             <button 
-              onClick={handleLogin} 
+              onClick={() => setShowAuthModal(true)} 
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-600 transition-all"
             >
               <LogIn size={16} />
@@ -346,47 +459,6 @@ function App() {
   const renderIdle = () => (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 w-full max-w-5xl mx-auto relative">
       
-      {/* Auth Error Banner */}
-      {authError && (
-        <div className="w-full max-w-xl mb-8 bg-red-900/20 border border-red-500/50 rounded-xl p-6 animate-in slide-in-from-top-4">
-          <div className="flex justify-between items-start mb-2">
-             <h3 className="text-red-400 font-bold flex items-center gap-2">
-               <AlertTriangle size={20} />
-               {authError.title}
-             </h3>
-             <button onClick={() => setAuthError(null)} className="text-red-400 hover:text-red-200">
-               <X size={20} />
-             </button>
-          </div>
-          
-          {authError.isFileProtocol ? (
-             <div className="text-slate-300 text-sm mb-2 space-y-2">
-                 <p>Google Login <strong>requires a web server</strong>. It does not work when opening <code className="bg-black/30 px-1 rounded">.html</code> files directly.</p>
-                 <p className="flex items-center gap-2"><Server size={14}/> <strong>Fix:</strong> Run a local server (e.g., <code className="text-yellow-400">npm start</code>, <code className="text-yellow-400">vite</code>, or VS Code Live Server).</p>
-             </div>
-          ) : (
-            <>
-              <p className="text-slate-300 text-sm mb-4">
-                 Firebase Authentication blocked this request. You must add the following domain to your Firebase Console.
-              </p>
-              <div className="bg-black/40 p-3 rounded-lg flex items-center justify-between group cursor-pointer border border-red-500/20"
-                 onClick={() => {
-                   navigator.clipboard.writeText(authError.domain);
-                   alert("Domain copied to clipboard!");
-                 }}>
-                <code className="text-red-200 font-mono text-sm break-all">
-                    {authError.domain}
-                </code>
-                <Copy size={16} className="text-slate-500 group-hover:text-white transition-colors flex-shrink-0 ml-2" />
-              </div>
-              <div className="mt-4 text-xs text-slate-500">
-                Go to: Firebase Console &gt; Authentication &gt; Settings &gt; Authorized Domains
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
       <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 mb-12">
         <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 mx-auto border border-slate-700 relative group">
           <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-all"></div>
@@ -394,7 +466,7 @@ function App() {
         </div>
         
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          {user ? `Welcome back, ${user.displayName?.split(' ')[0]}` : "Ready to Train?"}
+          {user ? `Welcome back, ${user.displayName ? user.displayName.split(' ')[0] : 'Viewer'}` : "Ready to Train?"}
         </h2>
         <p className="text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
           {user 
@@ -417,24 +489,88 @@ function App() {
           </button>
         ) : (
           <button
-            onClick={handleLogin}
+            onClick={() => setShowAuthModal(true)}
             className="mx-auto px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all flex items-center gap-3"
           >
              <UserIcon size={20} />
-             SIGN IN WITH GOOGLE
+             SIGN IN / REGISTER
           </button>
         )}
       </div>
 
       {/* Past History Section */}
       {user && history.length > 0 && (
-        <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 p-6 animate-in fade-in duration-1000 delay-200">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
-              <History size={18} /> Performance History
-            </h3>
+        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-1000 delay-200">
+          
+          {/* Left Col: Chart */}
+          <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
+                <History size={18} /> Performance History
+              </h3>
+              {history.length >= 3 && !coachReport && (
+                 <button 
+                   onClick={runCoachAnalysis} 
+                   disabled={analyzingHistory}
+                   className="text-xs bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 px-3 py-1.5 rounded-full border border-blue-800/50 transition-all flex items-center gap-2"
+                 >
+                   {analyzingHistory ? <RefreshCw className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                   Generate AI Coach Report
+                 </button>
+              )}
+            </div>
+            <HistoryChart sessions={history} />
           </div>
-          <HistoryChart sessions={history} />
+
+          {/* Right Col: Coach Report or Placeholder */}
+          <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 flex flex-col">
+            {coachReport ? (
+              <div className="space-y-4 animate-in slide-in-from-right duration-500">
+                <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-xs tracking-widest mb-2">
+                   <Brain size={14} /> AI Coach Report
+                </div>
+                
+                <p className="text-sm text-slate-300 italic">"{coachReport.trendSummary}"</p>
+                
+                <div className="space-y-3 mt-4">
+                   <div className="bg-green-900/10 border border-green-900/30 rounded-lg p-3">
+                      <h4 className="text-green-400 text-xs font-bold mb-2 flex items-center gap-1"><Check size={12}/> STRENGTHS</h4>
+                      <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
+                        {coachReport.strengths.map((s,i) => <li key={i}>{s}</li>)}
+                      </ul>
+                   </div>
+                   <div className="bg-red-900/10 border border-red-900/30 rounded-lg p-3">
+                      <h4 className="text-red-400 text-xs font-bold mb-2 flex items-center gap-1"><XCircle size={12}/> WEAKNESSES</h4>
+                      <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
+                        {coachReport.weaknesses.map((s,i) => <li key={i}>{s}</li>)}
+                      </ul>
+                   </div>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-slate-800">
+                   <h4 className="text-blue-400 text-xs font-bold mb-2 flex items-center gap-1"><Lightbulb size={12}/> TIP</h4>
+                   <p className="text-xs text-slate-400">{coachReport.trainingTips[0]}</p>
+                </div>
+              </div>
+            ) : (
+               <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-4 text-slate-500">
+                  <TrendingUp size={32} className="opacity-20" />
+                  <div>
+                    <p className="text-sm font-semibold">AI Analysis Ready</p>
+                    <p className="text-xs mt-1 max-w-[200px]">Complete 3 sessions to unlock personalized training insights.</p>
+                  </div>
+                  {history.length >= 3 && (
+                    <button 
+                      onClick={runCoachAnalysis}
+                      disabled={analyzingHistory} 
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      {analyzingHistory ? "Analyzing..." : "Generate Report"}
+                    </button>
+                  )}
+               </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -573,6 +709,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 font-sans selection:bg-blue-500/30">
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
       {renderHeader()}
       
       <main className="relative z-0 flex-grow flex flex-col">
