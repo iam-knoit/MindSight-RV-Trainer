@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import HistoryChart from './components/HistoryChart';
+import { useLanguage } from './contexts/LanguageContext';
 
 const generateCoordinate = () => {
   const p1 = Math.floor(1000 + Math.random() * 9000);
@@ -13,12 +14,7 @@ const generateCoordinate = () => {
   return `${p1}-${p2}`;
 };
 
-const STEPS = [
-  { id: 1, title: "Focus", icon: Brain },
-  { id: 2, title: "Impressions", icon: Sparkles },
-  { id: 3, title: "Sketch", icon: ImageIcon },
-  { id: 4, title: "Review", icon: CheckCircle },
-];
+// Moved STEPS definition inside App or made it a function to access translation
 
 // --- SUB-COMPONENTS ---
 
@@ -27,28 +23,29 @@ interface Step1Props {
   onNext: () => void;
 }
 
-const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => (
-  <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-in zoom-in-95 duration-500">
-    <div className="space-y-2">
-      <h3 className="text-slate-400 text-sm uppercase tracking-widest">Target Reference Number</h3>
-      <div className="text-6xl md:text-7xl font-mono font-bold text-white tracking-wider drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-        {coordinate}
+const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-in zoom-in-95 duration-500">
+      <div className="space-y-2">
+        <h3 className="text-slate-400 text-sm uppercase tracking-widest">{t('trn')}</h3>
+        <div className="text-6xl md:text-7xl font-mono font-bold text-white tracking-wider drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+          {coordinate}
+        </div>
       </div>
-    </div>
-    
-    <div className="max-w-lg bg-slate-800/50 p-6 rounded-xl border border-slate-700">
-      <p className="text-lg text-slate-300 leading-relaxed">
-        Relax. Clear your mind of expectations. <br/>
-        Focus only on the coordinate. <br/>
-        Allow information to drift into your awareness gently.
-      </p>
-    </div>
+      
+      <div className="max-w-lg bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+        <p className="text-lg text-slate-300 leading-relaxed">
+          {t('focusDesc')}
+        </p>
+      </div>
 
-    <button onClick={onNext} className="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-semibold transition-all flex items-center gap-2">
-      I am focused <ArrowRight size={18} />
-    </button>
-  </div>
-);
+      <button onClick={onNext} className="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-semibold transition-all flex items-center gap-2">
+        {t('btnFocused')} <ArrowRight size={18} />
+      </button>
+    </div>
+  );
+};
 
 interface Step2Props {
   notes: string;
@@ -57,33 +54,36 @@ interface Step2Props {
   onBack: () => void;
 }
 
-const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBack }) => (
-  <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-8 duration-300">
-    <div className="text-center mb-8">
-      <h2 className="text-2xl font-bold text-white mb-2">Stage 1: Sensory Data</h2>
-      <p className="text-slate-400">Write down the first sensory impressions (Gestalts). Colors, textures, smells, temperatures.</p>
-    </div>
+const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBack }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-8 duration-300">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-white mb-2">{t('stage1Title')}</h2>
+        <p className="text-slate-400">{t('stage1Desc')}</p>
+      </div>
 
-    <div className="bg-slate-800/50 p-1 rounded-2xl border border-slate-700 focus-within:border-blue-500/50 transition-colors">
-      <textarea
-        className="w-full h-64 bg-slate-900 rounded-xl p-6 text-lg text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none"
-        placeholder="e.g., Red, rough texture, metallic smell, sense of motion..."
-        value={notes}
-        onChange={(e) => onChange(e.target.value)}
-        autoFocus
-      />
-    </div>
+      <div className="bg-slate-800/50 p-1 rounded-2xl border border-slate-700 focus-within:border-blue-500/50 transition-colors">
+        <textarea
+          className="w-full h-64 bg-slate-900 rounded-xl p-6 text-lg text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none"
+          placeholder={t('placeholderNotes')}
+          value={notes}
+          onChange={(e) => onChange(e.target.value)}
+          autoFocus
+        />
+      </div>
 
-    <div className="flex justify-between pt-4">
-      <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
-        <ArrowLeft size={18} /> Back
-      </button>
-      <button onClick={onNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
-        Next: Visuals <ArrowRight size={18} />
-      </button>
+      <div className="flex justify-between pt-4">
+        <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
+          <ArrowLeft size={18} /> {t('btnBack')}
+        </button>
+        <button onClick={onNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
+          {t('btnNextVisuals')} <ArrowRight size={18} />
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface Step4Props {
   notes: string;
@@ -92,50 +92,53 @@ interface Step4Props {
   onBack: () => void;
 }
 
-const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack }) => (
-  <div className="max-w-4xl mx-auto w-full space-y-6 animate-in slide-in-from-right-8 duration-300">
-     <div className="text-center mb-8">
-      <h2 className="text-2xl font-bold text-white">Final Review</h2>
-      <p className="text-slate-400">Check your data before submitting to the AI Judge.</p>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
-        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Sparkles size={14} /> Sensory Notes
-        </h3>
-        <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">
-          {notes || <span className="text-slate-600 italic">No notes recorded.</span>}
-        </p>
+const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="max-w-4xl mx-auto w-full space-y-6 animate-in slide-in-from-right-8 duration-300">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-white">{t('reviewTitle')}</h2>
+        <p className="text-slate-400">{t('reviewDesc')}</p>
       </div>
-      
-      <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
-        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-           <ImageIcon size={14} /> Sketch Preview
-        </h3>
-        <div className="bg-white rounded-lg overflow-hidden aspect-[4/3] border border-slate-600">
-           {sketch ? (
-             <img src={sketch} alt="User Sketch" className="w-full h-full object-contain" />
-           ) : (
-             <div className="w-full h-full flex items-center justify-center text-slate-400">No sketch drawn</div>
-           )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Sparkles size={14} /> {t('sensoryNotes')}
+          </h3>
+          <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">
+            {notes || <span className="text-slate-600 italic">{t('noNotes')}</span>}
+          </p>
+        </div>
+        
+        <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+            <ImageIcon size={14} /> {t('sketchPreview')}
+          </h3>
+          <div className="bg-white rounded-lg overflow-hidden aspect-[4/3] border border-slate-600">
+            {sketch ? (
+              <img src={sketch} alt="User Sketch" className="w-full h-full object-contain" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-400">{t('noSketch')}</div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-    <div className="flex justify-between pt-8">
-      <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
-        <ArrowLeft size={18} /> Edit Data
-      </button>
-      <button 
-        onClick={onSubmit} 
-        className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-[0_0_30px_-5px_rgba(22,163,74,0.4)]"
-      >
-        <ShieldCheck size={20} /> SUBMIT FOR ANALYSIS
-      </button>
+      <div className="flex justify-between pt-8">
+        <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
+          <ArrowLeft size={18} /> {t('editData')}
+        </button>
+        <button 
+          onClick={onSubmit} 
+          className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-[0_0_30px_-5px_rgba(22,163,74,0.4)]"
+        >
+          <ShieldCheck size={20} /> {t('submitAnalysis')}
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -143,6 +146,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -166,7 +170,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
       onClose();
     } catch (err: any) {
-      let msg = "Authentication failed.";
+      let msg = t('authFailed');
       if (err.code === 'auth/invalid-email') msg = "Invalid email address.";
       if (err.code === 'auth/user-not-found') msg = "No account found with this email.";
       if (err.code === 'auth/wrong-password') msg = "Incorrect password.";
@@ -189,7 +193,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         </button>
 
         <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          {isLogin ? "Welcome Back" : "Create Account"}
+          {isLogin ? t('welcomeBackAuth') : t('createAccount')}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -201,7 +205,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
           {!isLogin && (
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-400 uppercase">Display Name</label>
+              <label className="text-xs font-semibold text-slate-400 uppercase">{t('displayName')}</label>
               <div className="relative">
                 <UserIcon className="absolute left-3 top-3 text-slate-500" size={18} />
                 <input 
@@ -209,14 +213,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  placeholder="Your Name"
+                  placeholder={t('yourName')}
                 />
               </div>
             </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase">Email Address</label>
+            <label className="text-xs font-semibold text-slate-400 uppercase">{t('emailAddress')}</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 text-slate-500" size={18} />
               <input 
@@ -230,7 +234,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase">Password</label>
+            <label className="text-xs font-semibold text-slate-400 uppercase">{t('password')}</label>
              <div className="relative">
               <Lock className="absolute left-3 top-3 text-slate-500" size={18} />
               <input 
@@ -251,19 +255,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             {loading ? (
               <RefreshCw className="animate-spin mx-auto" size={20}/>
             ) : (
-              isLogin ? "Sign In" : "Sign Up"
+              isLogin ? t('btnSignIn') : t('btnSignUp')
             )}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-slate-400 text-sm">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            {isLogin ? t('noAccount') : t('haveAccount')}{" "}
             <button 
               onClick={() => setIsLogin(!isLogin)} 
               className="text-blue-400 hover:text-blue-300 font-semibold"
             >
-              {isLogin ? "Sign Up" : "Sign In"}
+              {isLogin ? t('btnSignUp') : t('btnSignIn')}
             </button>
           </p>
         </div>
@@ -273,6 +277,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 };
 
 function App() {
+  const { t, language, setLanguage } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [state, setState] = useState<SessionState>(SessionState.IDLE);
   const [step, setStep] = useState(1);
@@ -285,11 +290,18 @@ function App() {
   const [history, setHistory] = useState<SessionData[]>([]);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("INITIALIZING...");
+  const [loadingMessage, setLoadingMessage] = useState(t('initializing'));
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
+
+  const STEPS = [
+    { id: 1, title: t('stepFocus'), icon: Brain },
+    { id: 2, title: t('stepImpressions'), icon: Sparkles },
+    { id: 3, title: t('stepSketch'), icon: ImageIcon },
+    { id: 4, title: t('stepReview'), icon: CheckCircle },
+  ];
 
   // Auth State Observer
   useEffect(() => {
@@ -315,12 +327,12 @@ function App() {
 
   const runCoachAnalysis = async () => {
     if (history.length < 3) {
-      alert("Complete at least 3 sessions to unlock AI Coaching.");
+      alert(t('aiCoachUnlock'));
       return;
     }
     setAnalyzingHistory(true);
     try {
-      const report = await generateCoachReport(history);
+      const report = await generateCoachReport(history, language);
       setCoachReport(report);
     } catch (e) {
       console.error(e);
@@ -337,7 +349,7 @@ function App() {
       return; 
     }
     setIsLoading(true);
-    setLoadingMessage("FETCHING ONLINE TARGET...");
+    setLoadingMessage(t('startSessionLoading'));
     try {
       const newCoord = generateCoordinate();
       setCoordinate(newCoord);
@@ -354,7 +366,7 @@ function App() {
       alert("Failed to initialize session. Check connection.");
     } finally {
       setIsLoading(false);
-      setLoadingMessage("START SESSION");
+      setLoadingMessage(t('startSession'));
     }
   };
 
@@ -364,7 +376,7 @@ function App() {
     setState(SessionState.ANALYZING);
     
     try {
-      const result = await analyzeSession(target.base64, userSketch, userNotes);
+      const result = await analyzeSession(target.base64, userSketch, userNotes, language);
       
       const newSession: SessionData = {
         id: Date.now().toString(),
@@ -405,9 +417,9 @@ function App() {
           </div>
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-              MindSight
+              {t('appTitle')}
             </h1>
-            <p className="text-xs text-slate-400 font-mono">RV TRAINING PROTOCOL v2.5</p>
+            <p className="text-xs text-slate-400 font-mono">{t('appSubtitle')}</p>
           </div>
         </div>
         
@@ -420,16 +432,26 @@ function App() {
                  ))}
                </div>
                <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 font-mono text-cyan-400 animate-pulse">
-                 TRN: {coordinate}
+                 {t('trn')}: {coordinate}
                </div>
              </div>
           )}
 
+          {/* Language Switcher */}
+          <button
+            onClick={() => setLanguage(language === 'en' ? 'si' : 'en')}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full transition-colors"
+            title="Switch Language"
+          >
+            <Globe size={14} className="text-slate-400"/>
+            <span className="text-xs font-semibold text-slate-200">{language === 'en' ? '🇺🇸 EN' : '🇱🇰 SI'}</span>
+          </button>
+
           {user ? (
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex flex-col items-end">
-                 <span className="text-xs text-slate-400">Operator</span>
-                 <span className="text-sm font-semibold text-slate-200">{user.displayName || "Viewer"}</span>
+                 <span className="text-xs text-slate-400">{t('operator')}</span>
+                 <span className="text-sm font-semibold text-slate-200">{user.displayName || t('viewer')}</span>
               </div>
               {user.photoURL ? (
                   <img src={user.photoURL} alt="User" className="w-8 h-8 rounded-full border border-slate-600" />
@@ -438,7 +460,7 @@ function App() {
                       <UserIcon size={16} />
                   </div>
               )}
-              <button onClick={logOut} className="p-2 text-slate-400 hover:text-red-400 transition-colors" title="Sign Out">
+              <button onClick={logOut} className="p-2 text-slate-400 hover:text-red-400 transition-colors" title={t('logout')}>
                 <LogOut size={20} />
               </button>
             </div>
@@ -448,7 +470,7 @@ function App() {
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-600 transition-all"
             >
               <LogIn size={16} />
-              <span className="text-sm font-semibold">Login</span>
+              <span className="text-sm font-semibold">{t('login')}</span>
             </button>
           )}
         </div>
@@ -466,12 +488,12 @@ function App() {
         </div>
         
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          {user ? `Welcome back, ${user.displayName ? user.displayName.split(' ')[0] : 'Viewer'}` : "Ready to Train?"}
+          {user ? `${t('welcomeBack')}, ${user.displayName ? user.displayName.split(' ')[0] : t('viewer')}` : t('readyToTrain')}
         </h2>
         <p className="text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
           {user 
-            ? "Initialize a blind session. Follow the 4-step protocol to record your data before feedback."
-            : "Sign in to track your progress across devices and analyze your Remote Viewing sessions with AI."}
+            ? t('introAuth')
+            : t('introGuest')}
         </p>
         
         {user ? (
@@ -485,7 +507,7 @@ function App() {
             ) : (
               <Play className="fill-white" size={20} />
             )}
-            {isLoading ? loadingMessage : "START NEW SESSION"}
+            {isLoading ? loadingMessage : t('startSession')}
           </button>
         ) : (
           <button
@@ -493,7 +515,7 @@ function App() {
             className="mx-auto px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all flex items-center gap-3"
           >
              <UserIcon size={20} />
-             SIGN IN / REGISTER
+             {t('signInRegister')}
           </button>
         )}
       </div>
@@ -506,7 +528,7 @@ function App() {
           <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
-                <History size={18} /> Performance History
+                <History size={18} /> {t('historyTitle')}
               </h3>
               {history.length >= 3 && !coachReport && (
                  <button 
@@ -515,7 +537,7 @@ function App() {
                    className="text-xs bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 px-3 py-1.5 rounded-full border border-blue-800/50 transition-all flex items-center gap-2"
                  >
                    {analyzingHistory ? <RefreshCw className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                   Generate AI Coach Report
+                   {t('aiCoachBtn')}
                  </button>
               )}
             </div>
@@ -527,20 +549,20 @@ function App() {
             {coachReport ? (
               <div className="space-y-4 animate-in slide-in-from-right duration-500">
                 <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-xs tracking-widest mb-2">
-                   <Brain size={14} /> AI Coach Report
+                   <Brain size={14} /> {t('coachReport')}
                 </div>
                 
                 <p className="text-sm text-slate-300 italic">"{coachReport.trendSummary}"</p>
                 
                 <div className="space-y-3 mt-4">
                    <div className="bg-green-900/10 border border-green-900/30 rounded-lg p-3">
-                      <h4 className="text-green-400 text-xs font-bold mb-2 flex items-center gap-1"><Check size={12}/> STRENGTHS</h4>
+                      <h4 className="text-green-400 text-xs font-bold mb-2 flex items-center gap-1"><Check size={12}/> {t('strengths')}</h4>
                       <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
                         {coachReport.strengths.map((s,i) => <li key={i}>{s}</li>)}
                       </ul>
                    </div>
                    <div className="bg-red-900/10 border border-red-900/30 rounded-lg p-3">
-                      <h4 className="text-red-400 text-xs font-bold mb-2 flex items-center gap-1"><XCircle size={12}/> WEAKNESSES</h4>
+                      <h4 className="text-red-400 text-xs font-bold mb-2 flex items-center gap-1"><XCircle size={12}/> {t('weaknesses')}</h4>
                       <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
                         {coachReport.weaknesses.map((s,i) => <li key={i}>{s}</li>)}
                       </ul>
@@ -548,7 +570,7 @@ function App() {
                 </div>
 
                 <div className="mt-auto pt-4 border-t border-slate-800">
-                   <h4 className="text-blue-400 text-xs font-bold mb-2 flex items-center gap-1"><Lightbulb size={12}/> TIP</h4>
+                   <h4 className="text-blue-400 text-xs font-bold mb-2 flex items-center gap-1"><Lightbulb size={12}/> {t('tip')}</h4>
                    <p className="text-xs text-slate-400">{coachReport.trainingTips[0]}</p>
                 </div>
               </div>
@@ -556,8 +578,8 @@ function App() {
                <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-4 text-slate-500">
                   <TrendingUp size={32} className="opacity-20" />
                   <div>
-                    <p className="text-sm font-semibold">AI Analysis Ready</p>
-                    <p className="text-xs mt-1 max-w-[200px]">Complete 3 sessions to unlock personalized training insights.</p>
+                    <p className="text-sm font-semibold">{t('aiCoachReady')}</p>
+                    <p className="text-xs mt-1 max-w-[200px]">{t('aiCoachUnlock')}</p>
                   </div>
                   {history.length >= 3 && (
                     <button 
@@ -565,7 +587,7 @@ function App() {
                       disabled={analyzingHistory} 
                       className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors"
                     >
-                      {analyzingHistory ? "Analyzing..." : "Generate Report"}
+                      {analyzingHistory ? t('analyzing') : t('generateReport')}
                     </button>
                   )}
                </div>
@@ -601,18 +623,18 @@ function App() {
          {/* Special handling for SketchPad to preserve state: Keep mounted but hide */}
          <div className={`flex flex-col h-full ${step === 3 ? 'flex' : 'hidden'}`}>
            <div className="text-center mb-4">
-              <h2 className="text-2xl font-bold text-white">Stage 2: Visual Sketch</h2>
-              <p className="text-slate-400 text-sm">Draw the shapes and forms. Do not try to identify the object.</p>
+              <h2 className="text-2xl font-bold text-white">{t('stage2Title')}</h2>
+              <p className="text-slate-400 text-sm">{t('stage2Desc')}</p>
            </div>
            <div className="flex-grow min-h-[500px] bg-slate-800/50 rounded-2xl border border-slate-700 p-4">
               <SketchPad onExport={handleSketchExport} />
            </div>
            <div className="flex justify-between pt-4">
               <button onClick={prevStep} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
-                <ArrowLeft size={18} /> Back
+                <ArrowLeft size={18} /> {t('btnBack')}
               </button>
               <button onClick={nextStep} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
-                Review Session <ArrowRight size={18} />
+                {t('sketchReviewBtn')} <ArrowRight size={18} />
               </button>
            </div>
          </div>
@@ -628,8 +650,8 @@ function App() {
         <div className="absolute inset-0 bg-blue-500/30 blur-xl rounded-full animate-pulse"></div>
         <RefreshCw className="w-16 h-16 text-blue-400 animate-spin relative z-10" />
       </div>
-      <h2 className="text-2xl font-bold text-white mb-2">Analyzing Session...</h2>
-      <p className="text-slate-400">Comparing your sketch with the blind target.</p>
+      <h2 className="text-2xl font-bold text-white mb-2">{t('analyzingTitle')}</h2>
+      <p className="text-slate-400">{t('analyzingDesc')}</p>
     </div>
   );
 
@@ -641,11 +663,11 @@ function App() {
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <CheckCircle className="text-green-500" />
-            Feedback Phase
+            {t('feedbackPhase')}
           </h2>
           <div className="flex gap-4">
              <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                <span className="text-slate-400 text-sm mr-2">ACCURACY SCORE</span>
+                <span className="text-slate-400 text-sm mr-2">{t('accuracyScore')}</span>
                 <span className={`font-bold text-xl ${currentSession.aiScore >= 70 ? 'text-green-400' : currentSession.aiScore >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
                   {currentSession.aiScore}%
                 </span>
@@ -654,7 +676,7 @@ function App() {
                onClick={() => setState(SessionState.IDLE)}
                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
              >
-               Next Session
+               {t('nextSession')}
              </button>
           </div>
         </div>
@@ -663,7 +685,7 @@ function App() {
           {/* Target Reveal */}
           <div className="space-y-2">
             <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
-              ACTUAL TARGET
+              {t('actualTarget')}
             </div>
             <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3]">
               <img 
@@ -677,13 +699,13 @@ function App() {
           {/* User Sketch Review */}
           <div className="space-y-2">
             <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
-              YOUR SKETCH
+              {t('yourSketch')}
             </div>
             <div className="relative rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3] bg-white">
                {currentSession.userSketchBase64 ? (
                  <img src={currentSession.userSketchBase64} alt="Sketch" className="w-full h-full object-contain" />
                ) : (
-                 <div className="flex items-center justify-center h-full text-slate-400">No Sketch Provided</div>
+                 <div className="flex items-center justify-center h-full text-slate-400">{t('noSketch')}</div>
                )}
             </div>
           </div>
@@ -692,15 +714,15 @@ function App() {
         {/* Analysis Text */}
         <div className="bg-slate-800/50 rounded-2xl p-8 border border-slate-700 mb-8">
            <h3 className="text-xl font-semibold text-blue-400 mb-4 flex items-center gap-2">
-             <Sparkles size={20} /> AI Analysis
+             <Sparkles size={20} /> {t('aiAnalysis')}
            </h3>
-           <p className="text-lg text-slate-300 leading-relaxed">
+           <p className="text-lg text-slate-300 leading-relaxed whitespace-pre-wrap">
              {currentSession.aiFeedback}
            </p>
         </div>
         
         <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">Performance Trend</h3>
+          <h3 className="text-lg font-semibold text-slate-300 mb-4">{t('trendTitle')}</h3>
           <HistoryChart sessions={history} />
         </div>
       </div>

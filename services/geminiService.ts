@@ -9,7 +9,8 @@ const cleanBase64 = (data: string) => {
 export const analyzeSession = async (
   targetImageBase64: string,
   userSketchBase64: string | null,
-  userNotes: string
+  userNotes: string,
+  language: 'en' | 'si' = 'en'
 ): Promise<ScoringResult> => {
   
   if (!process.env.API_KEY) {
@@ -47,6 +48,10 @@ export const analyzeSession = async (
     text: `These are the VIEWER'S NOTES describing their impressions: "${userNotes}"`
   });
 
+  const langInstruction = language === 'si' 
+    ? "Respond in Sinhala language (use Sinhala script)." 
+    : "Respond in English.";
+
   // Add Instructions
   parts.push({
     text: `
@@ -61,6 +66,8 @@ export const analyzeSession = async (
       
       Ignore lack of artistic skill in the sketch. Focus on data congruence.
       
+      ${langInstruction}
+
       Provide a JSON response with:
       - score: An integer from 0 to 100 representing accuracy.
       - feedback: A concise (max 3 sentences) analysis of what they got right and what they missed. Be professional and encouraging.
@@ -93,7 +100,7 @@ export const analyzeSession = async (
     console.error("AI Analysis failed:", error);
     return {
       score: 0,
-      feedback: "Failed to analyze session. Please try again."
+      feedback: language === 'si' ? "විශ්ලේෂණය අසාර්ථක විය. කරුණාකර නැවත උත්සාහ කරන්න." : "Failed to analyze session. Please try again."
     };
   }
 };
@@ -157,7 +164,7 @@ export const generateTargetImage = async (): Promise<{ url: string; base64: stri
   }
 };
 
-export const generateCoachReport = async (history: SessionData[]): Promise<CoachReport> => {
+export const generateCoachReport = async (history: SessionData[], language: 'en' | 'si' = 'en'): Promise<CoachReport> => {
   if (!process.env.API_KEY) {
     throw new Error("API Key is missing");
   }
@@ -174,6 +181,10 @@ export const generateCoachReport = async (history: SessionData[]): Promise<Coach
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+  const langInstruction = language === 'si' 
+    ? "Respond in Sinhala language (use Sinhala script)." 
+    : "Respond in English.";
+
   const prompt = `
     You are a Remote Viewing Instructor. Analyze the following training history for a student.
     Identify patterns in their performance. Are they improving? Do they consistently miss specific types of data (e.g., colors, shapes, motion)?
@@ -181,6 +192,8 @@ export const generateCoachReport = async (history: SessionData[]): Promise<Coach
     HISTORY LOG:
     ${historyText}
     
+    ${langInstruction}
+
     Based on this, provide a JSON report with:
     1. trendSummary: A 1-sentence overview of their progress.
     2. strengths: A list of 2-3 things they are doing well.
