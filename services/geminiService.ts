@@ -98,10 +98,8 @@ export const analyzeSession = async (
     }
   } catch (error) {
     console.error("AI Analysis failed:", error);
-    return {
-      score: 0,
-      feedback: language === 'si' ? "විශ්ලේෂණය අසාර්ථක විය. කරුණාකර නැවත උත්සාහ කරන්න." : "Failed to analyze session. Please try again."
-    };
+    // Throw error to let the App know analysis failed, rather than returning a 0 score
+    throw error;
   }
 };
 

@@ -94,6 +94,10 @@ const translations = {
     // Analyzing
     "analyzingTitle": "Analyzing Session...",
     "analyzingDesc": "Comparing your sketch with the blind target.",
+    "analysisFailed": "Analysis Failed",
+    "analysisErrorDesc": "The AI could not complete the analysis. Please check your internet connection and try again.",
+    "tryAgain": "Try Again",
+    "returnToReview": "Return to Review",
 
     // Feedback
     "feedbackPhase": "Feedback Phase",
@@ -216,6 +220,10 @@ const translations = {
     // Analyzing
     "analyzingTitle": "සැසිය විශ්ලේෂණය කරමින්...",
     "analyzingDesc": "ඔබේ සිතුවම අන්ධ ඉලක්කය සමඟ සසඳමින්.",
+    "analysisFailed": "විශ්ලේෂණය අසාර්ථක විය",
+    "analysisErrorDesc": "AI හට විශ්ලේෂණය සම්පූර්ණ කිරීමට නොහැකි විය. කරුණාකර ඔබගේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
+    "tryAgain": "නැවත උත්සාහ කරන්න",
+    "returnToReview": "නැවත පරීක්ෂා කිරීමට",
 
     // Feedback
     "feedbackPhase": "ප්‍රතිපෝෂණ අදියර",

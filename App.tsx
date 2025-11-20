@@ -520,6 +520,7 @@ function App() {
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Ref to track if the session is currently active/valid.
   // This prevents race conditions where user exits (goes to IDLE) but async analysis finishes and forces FEEDBACK state.
@@ -635,6 +636,8 @@ function App() {
   // Submit session for analysis
   const submitSession = async () => {
     if (!target || !user) return;
+    
+    setAnalysisError(null);
     setState(SessionState.ANALYZING);
     
     try {
@@ -666,10 +669,10 @@ function App() {
         setState(SessionState.FEEDBACK);
       }
     } catch (e) {
-      console.error(e);
-      alert("Analysis failed.");
+      console.error("Session submission failed:", e);
+      // Only show error if session is still active
       if (sessionRef.current) {
-        setState(SessionState.VIEWING); 
+        setAnalysisError(t('analysisFailed'));
       }
     }
   };
@@ -986,16 +989,48 @@ function App() {
     </div>
   );
 
-  const renderAnalyzing = () => (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-500">
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-blue-500/30 blur-xl rounded-full animate-pulse"></div>
-        <RefreshCw className="w-16 h-16 text-blue-400 animate-spin relative z-10" />
+  const renderAnalyzing = () => {
+    if (analysisError) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-500 p-4 text-center">
+                <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-6 border border-red-500/50">
+                    <AlertTriangle className="w-8 h-8 text-red-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">{t('analysisFailed')}</h2>
+                <p className="text-slate-400 mb-8 max-w-md">{t('analysisErrorDesc')}</p>
+                
+                <div className="flex flex-wrap justify-center gap-4">
+                    <button 
+                        onClick={() => {
+                            setAnalysisError(null);
+                            setState(SessionState.VIEWING);
+                        }}
+                        className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors border border-slate-700"
+                    >
+                        {t('returnToReview')}
+                    </button>
+                    <button 
+                        onClick={submitSession}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                    >
+                        <RefreshCw size={18} /> {t('tryAgain')}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-500">
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-blue-500/30 blur-xl rounded-full animate-pulse"></div>
+          <RefreshCw className="w-16 h-16 text-blue-400 animate-spin relative z-10" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">{t('analyzingTitle')}</h2>
+        <p className="text-slate-400">{t('analyzingDesc')}</p>
       </div>
-      <h2 className="text-2xl font-bold text-white mb-2">{t('analyzingTitle')}</h2>
-      <p className="text-slate-400">{t('analyzingDesc')}</p>
-    </div>
-  );
+    );
+  };
 
   const renderFeedback = () => {
     if (!currentSession) return null;
