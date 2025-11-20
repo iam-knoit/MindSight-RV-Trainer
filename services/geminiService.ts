@@ -132,17 +132,20 @@ export const generateTargetImage = async (): Promise<{ url: string; base64: stri
     let description = "A random scene.";
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Fix: Wrap parts in { parts: [...] } to match Content structure
       const descriptionResponse = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: cleanBase64(base64)
-            }
-          },
-          { text: "Describe this scene concisely in one sentence for a remote viewing target. Focus on major forms and subject." }
-        ]
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: cleanBase64(base64)
+              }
+            },
+            { text: "Describe this scene concisely in one sentence for a remote viewing target. Focus on major forms and subject." }
+          ]
+        }
       });
       if (descriptionResponse.text) {
         description = descriptionResponse.text.trim();
