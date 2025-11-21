@@ -17,9 +17,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true, // Expose to network for cloud IDEs
       port: 3000
-    },
-    build: {
-      outDir: 'build', // Changed from default 'dist' to 'build' for Vercel compatibility
     }
+    // build.outDir defaults to 'dist', which is what Vercel expects by default.
   };
 });
