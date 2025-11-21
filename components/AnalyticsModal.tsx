@@ -108,7 +108,7 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
 
           {!coachReport && totalSessions >= 3 && (
              <div className="text-center p-8 border border-dashed border-slate-700 rounded-xl text-slate-500">
-                Click "Generate AI Coach Report" on the dashboard to see your Future Training Path.
+                {t('aiCoachPrompt')}
              </div>
           )}
         </div>

@@ -47,6 +47,7 @@ const translations = {
     "futureSteps": "Future Training Path",
     "futureStepsDesc": "AI-generated milestones to reach your next level.",
     "close": "Close",
+    "aiCoachPrompt": "Click \"Generate AI Coach Report\" on the dashboard to see your Future Training Path.",
 
     // Chat
     "chatTitle": "Coach Assistant",
@@ -183,6 +184,7 @@ const translations = {
     "futureSteps": "අනාගත පුහුණු මාර්ගය",
     "futureStepsDesc": "ඔබේ ඊළඟ මට්ටමට ළඟා වීමට AI ජනනය කළ සන්ධිස්ථාන.",
     "close": "වසන්න",
+    "aiCoachPrompt": "ඔබේ අනාගත පුහුණු මාර්ගය බැලීමට උපකරණ පුවරුවේ 'AI උපදේශක වාර්තාව' ක්ලික් කරන්න.",
 
     // Chat
     "chatTitle": "පුහුණුකරු සහායක",
