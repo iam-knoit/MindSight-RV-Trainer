@@ -12,7 +12,7 @@ const translations = {
   en: {
     // Meta / Global
     "appTitle": "MindSight",
-    "appSubtitle": "RV TRAINING PROTOCOL v2.5",
+    "appSubtitle": "RV TRAINING PROTOCOL v2.6",
     "login": "Login",
     "logout": "Sign Out",
     "operator": "Operator",
@@ -148,7 +148,7 @@ const translations = {
   si: {
     // Meta / Global
     "appTitle": "MindSight",
-    "appSubtitle": "RV පුහුණු ප්‍රොටෝකෝලය v2.5",
+    "appSubtitle": "RV පුහුණු ප්‍රොටෝකෝලය v2.6",
     "login": "පිවිසෙන්න",
     "logout": "ඉවත් වන්න",
     "operator": "ක්‍රියාකරු",
