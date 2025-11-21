@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3 } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
@@ -7,6 +7,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import HistoryChart from './components/HistoryChart';
 import CoachChat from './components/CoachChat';
+import AnalyticsModal from './components/AnalyticsModal';
 import { useLanguage } from './contexts/LanguageContext';
 
 const generateCoordinate = () => {
@@ -517,6 +518,8 @@ function App() {
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false); // Confirmation modal state
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false); // New Analytics Modal state
+
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -844,6 +847,15 @@ function App() {
                 <History size={18} /> {t('historyTitle')}
               </h3>
               <div className="flex gap-2">
+                 {/* Analytics Button (New) */}
+                 <button 
+                    onClick={() => setShowAnalyticsModal(true)}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-full border border-slate-700 transition-all flex items-center gap-2"
+                 >
+                    <BarChart3 size={12} />
+                    {t('viewAnalytics')}
+                 </button>
+
                  {/* Chat Button */}
                  <button 
                    onClick={() => setShowChat(true)}
@@ -852,17 +864,6 @@ function App() {
                    <MessageSquareText size={12} />
                    {t('openChat')}
                  </button>
-                 
-                 {history.length >= 3 && !coachReport && (
-                   <button 
-                     onClick={runCoachAnalysis} 
-                     disabled={analyzingHistory}
-                     className="text-xs bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 px-3 py-1.5 rounded-full border border-blue-800/50 transition-all flex items-center gap-2"
-                   >
-                     {analyzingHistory ? <RefreshCw className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                     {t('aiCoachBtn')}
-                   </button>
-                )}
               </div>
             </div>
             <HistoryChart sessions={history} />
@@ -1132,6 +1133,12 @@ function App() {
         message={t('confirmExit')}
         onConfirm={confirmExitSession}
         onCancel={() => setShowExitConfirm(false)}
+      />
+      <AnalyticsModal 
+        isOpen={showAnalyticsModal} 
+        onClose={() => setShowAnalyticsModal(false)} 
+        history={history} 
+        coachReport={coachReport} 
       />
       
       {/* Chat Interface */}

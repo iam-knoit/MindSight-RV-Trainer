@@ -37,6 +37,16 @@ const translations = {
     "regenerateReport": "Refresh Analysis",
     "noHistory": "No history yet.",
     "totalTime": "Total Training Time",
+    "viewAnalytics": "View Full Analytics",
+
+    // Analytics Modal
+    "analyticsTitle": "Performance Analytics",
+    "avgScore": "Average Score",
+    "bestScore": "Personal Best",
+    "totalSessions": "Total Sessions",
+    "futureSteps": "Future Training Path",
+    "futureStepsDesc": "AI-generated milestones to reach your next level.",
+    "close": "Close",
 
     // Chat
     "chatTitle": "Coach Assistant",
@@ -163,6 +173,16 @@ const translations = {
     "regenerateReport": "වාර්තාව අලුත් කරන්න",
     "noHistory": "තවම ඉතිහාසයක් නැත.",
     "totalTime": "මුළු පුහුණු කාලය",
+    "viewAnalytics": "සම්පූර්ණ විශ්ලේෂණය බලන්න",
+
+    // Analytics Modal
+    "analyticsTitle": "කාර්ය සාධන විශ්ලේෂණය",
+    "avgScore": "සාමාන්‍ය ලකුණු",
+    "bestScore": "හොඳම ලකුණු",
+    "totalSessions": "මුළු සැසි",
+    "futureSteps": "අනාගත පුහුණු මාර්ගය",
+    "futureStepsDesc": "ඔබේ ඊළඟ මට්ටමට ළඟා වීමට AI ජනනය කළ සන්ධිස්ථාන.",
+    "close": "වසන්න",
 
     // Chat
     "chatTitle": "පුහුණුකරු සහායක",

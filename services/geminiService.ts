@@ -200,6 +200,7 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
     2. strengths: A list of 2-3 things they are doing well.
     3. weaknesses: A list of 2-3 things they need to improve.
     4. trainingTips: A list of 2-3 specific actionable exercises to improve.
+    5. futureSteps: A list of 3 distinct, actionable milestones/goals they should aim for next (e.g. "Achieve 3 sessions > 75%").
   `;
 
   try {
@@ -214,9 +215,10 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
             trendSummary: { type: Type.STRING },
             strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
             weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
-            trainingTips: { type: Type.ARRAY, items: { type: Type.STRING } }
+            trainingTips: { type: Type.ARRAY, items: { type: Type.STRING } },
+            futureSteps: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
-          required: ["trendSummary", "strengths", "weaknesses", "trainingTips"]
+          required: ["trendSummary", "strengths", "weaknesses", "trainingTips", "futureSteps"]
         }
       }
     });

@@ -33,6 +33,7 @@ export interface CoachReport {
   strengths: string[];
   weaknesses: string[];
   trainingTips: string[];
+  futureSteps: string[];
 }
 
 export interface ChatMessage {
