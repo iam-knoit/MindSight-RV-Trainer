@@ -1,5 +1,9 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'fs';
+
+// Read the version from package.json
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -13,6 +17,8 @@ export default defineConfig(({ mode }) => {
     define: {
       // This creates a global variable `process.env.API_KEY` that the code uses
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
+      // Expose the package version dynamically
+      'process.env.APP_VERSION': JSON.stringify(packageJson.version),
     },
     server: {
       host: true, // Expose to network for cloud IDEs

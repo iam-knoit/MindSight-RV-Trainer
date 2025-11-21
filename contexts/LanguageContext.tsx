@@ -8,11 +8,14 @@ interface LanguageContextType {
   t: (key: string) => string;
 }
 
+// Get the version from the environment (injected by Vite)
+const appVersion = process.env.APP_VERSION || '2.6.0';
+
 const translations = {
   en: {
     // Meta / Global
     "appTitle": "MindSight",
-    "appSubtitle": "RV TRAINING PROTOCOL v2.6",
+    "appSubtitle": `RV TRAINING PROTOCOL v${appVersion}`,
     "login": "Login",
     "logout": "Sign Out",
     "operator": "Operator",
@@ -149,7 +152,7 @@ const translations = {
   si: {
     // Meta / Global
     "appTitle": "MindSight",
-    "appSubtitle": "RV පුහුණු ප්‍රොටෝකෝලය v2.6",
+    "appSubtitle": `RV පුහුණු ප්‍රොටෝකෝලය v${appVersion}`,
     "login": "පිවිසෙන්න",
     "logout": "ඉවත් වන්න",
     "operator": "ක්‍රියාකරු",
