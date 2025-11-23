@@ -100,6 +100,8 @@ const translations = {
     "breatheOut": "Breathe Out...",
     "breatheHold": "Hold...",
     "btnFocused": "I am focused",
+    "audioFocus": "Binaural Focus",
+    "audioMute": "Mute Audio",
 
     // Step 2: Impressions
     "stage1Title": "Stage 1: Sensory Data",
@@ -268,6 +270,8 @@ const translations = {
     "breatheOut": "හුස්ම පිටකරන්න...",
     "breatheHold": "රඳවා ගන්න...",
     "btnFocused": "මම අවධානය යොමු කළා",
+    "audioFocus": "ද්විමය අවධානය",
+    "audioMute": "ශබ්දය නිහඬ කරන්න",
 
     // Step 2: Impressions
     "stage1Title": "අදියර 1: සංවේදක දත්ත",

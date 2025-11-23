@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionRemarks } from './services/firebase';
@@ -65,6 +65,78 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
   const [isFocusing, setIsFocusing] = useState(false);
   const [breathState, setBreathState] = useState<'in' | 'hold' | 'out'>('in');
   const [guideText, setGuideText] = useState('');
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  
+  // Web Audio API Refs
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const oscillatorsRef = useRef<OscillatorNode[]>([]);
+
+  // Initialize Audio Logic
+  const initAudio = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const gain = audioCtxRef.current.createGain();
+      gain.gain.setValueAtTime(0, audioCtxRef.current.currentTime); // Start silent
+      gain.connect(audioCtxRef.current.destination);
+      gainNodeRef.current = gain;
+    }
+  };
+
+  const startAudio = () => {
+    if (!audioEnabled) return;
+    initAudio();
+    if (!audioCtxRef.current || !gainNodeRef.current) return;
+
+    // Create a Theta Beat (4Hz difference)
+    // Left Ear: 200Hz
+    // Right Ear: 204Hz
+    const osc1 = audioCtxRef.current.createOscillator();
+    const osc2 = audioCtxRef.current.createOscillator();
+    const panner1 = audioCtxRef.current.createStereoPanner();
+    const panner2 = audioCtxRef.current.createStereoPanner();
+
+    osc1.type = 'sine';
+    osc2.type = 'sine';
+    osc1.frequency.value = 200;
+    osc2.frequency.value = 204;
+
+    panner1.pan.value = -1; // Left
+    panner2.pan.value = 1;  // Right
+
+    osc1.connect(panner1).connect(gainNodeRef.current);
+    osc2.connect(panner2).connect(gainNodeRef.current);
+
+    osc1.start();
+    osc2.start();
+    oscillatorsRef.current = [osc1, osc2];
+
+    // Fade in
+    gainNodeRef.current.gain.linearRampToValueAtTime(0.15, audioCtxRef.current.currentTime + 2);
+  };
+
+  const stopAudio = () => {
+    if (gainNodeRef.current && audioCtxRef.current) {
+      // Fade out
+      gainNodeRef.current.gain.linearRampToValueAtTime(0, audioCtxRef.current.currentTime + 1);
+      setTimeout(() => {
+        oscillatorsRef.current.forEach(osc => {
+          try { osc.stop(); } catch (e) {}
+        });
+        oscillatorsRef.current = [];
+      }, 1000);
+    }
+  };
+
+  const handleStartFocus = () => {
+    setIsFocusing(true);
+    startAudio();
+  };
+
+  const handleStopFocus = () => {
+    stopAudio();
+    onNext();
+  };
 
   // Breath cycle timer
   useEffect(() => {
@@ -89,8 +161,18 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
     };
 
     runCycle();
-    return () => { step = -1; }; // Cleanup logic not strictly needed with timeouts but good practice
+    return () => { step = -1; };
   }, [isFocusing, t]);
+
+  // Clean up audio on unmount
+  useEffect(() => {
+    return () => {
+      stopAudio();
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+      }
+    };
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-in fade-in duration-700">
@@ -104,7 +186,8 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
             </div>
           </div>
           
-          <div className="max-w-lg bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+          <div className="max-w-lg bg-slate-800/50 p-6 rounded-xl border border-slate-700 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-cyan-400"></div>
             <p className="text-lg text-slate-300 leading-relaxed mb-4">
               {t('focusDesc')}
             </p>
@@ -114,12 +197,25 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
             </div>
           </div>
 
+          <div className="flex items-center gap-4">
+            <button
+                onClick={() => setAudioEnabled(!audioEnabled)}
+                className={`p-3 rounded-full border transition-all ${audioEnabled ? 'bg-blue-900/30 border-blue-500/50 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
+                title={audioEnabled ? t('audioMute') : t('audioFocus')}
+            >
+                {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+            </button>
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">
+                {audioEnabled ? t('audioFocus') : t('audioMute')}
+            </div>
+          </div>
+
           <div className="flex flex-col md:flex-row gap-4">
             <button 
-              onClick={() => setIsFocusing(true)} 
-              className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-semibold transition-all flex items-center justify-center gap-2 border border-slate-600"
+              onClick={handleStartFocus} 
+              className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-semibold transition-all flex items-center justify-center gap-2 border border-slate-600 group"
             >
-              <Wind size={18} /> {t('startFocusSeq')}
+              <Wind size={18} className="group-hover:animate-pulse" /> {t('startFocusSeq')}
             </button>
             <button 
               onClick={onNext} 
@@ -159,9 +255,18 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
                 </div>
              </div>
           </div>
+          
+          {/* Sound Indicator */}
+          {audioEnabled && (
+             <div className="absolute top-10 flex gap-1 items-end h-4">
+               {[...Array(5)].map((_, i) => (
+                 <div key={i} className="w-1 bg-blue-500/50 animate-[bounce_1s_infinite] rounded-full" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.1}s` }}></div>
+               ))}
+             </div>
+          )}
 
           <button 
-            onClick={onNext}
+            onClick={handleStopFocus}
             className="absolute bottom-10 px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all border border-slate-600 hover:border-blue-500 z-20"
           >
             {t('stopFocusSeq')}
