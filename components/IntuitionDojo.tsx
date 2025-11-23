@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Circle, Square, Star, Waves, Plus, Trophy, Target, Zap, RotateCcw } from 'lucide-react';
+import { Circle, Square, Star, Waves, Plus, Trophy, Target, Zap, RotateCcw, Lock, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { IntuitionStats } from '../types';
 import { updateIntuitionStats } from '../services/firebase';
@@ -8,6 +9,7 @@ import { auth } from '../services/firebase';
 interface IntuitionDojoProps {
   onClose: () => void;
   initialStats: IntuitionStats | null;
+  lockedMode?: boolean; // If true, user must achieve a target to exit
 }
 
 type CardType = 'circle' | 'square' | 'star' | 'waves' | 'cross';
@@ -20,13 +22,16 @@ const CARDS: { type: CardType; icon: React.FC<any>; color: string }[] = [
   { type: 'star', icon: Star, color: 'text-purple-400' },
 ];
 
-const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats }) => {
+const TARGET_STREAK_TO_UNLOCK = 3;
+
+const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lockedMode = false }) => {
   const { t } = useLanguage();
   
   // Game State
   const [targetCard, setTargetCard] = useState<CardType | null>(null);
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
   
   // Stats
   const [stats, setStats] = useState<IntuitionStats>(initialStats || {
@@ -40,6 +45,13 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats }) 
   useEffect(() => {
     pickNewTarget();
   }, []);
+
+  // Check for unlock condition
+  useEffect(() => {
+    if (lockedMode && stats.currentStreak >= TARGET_STREAK_TO_UNLOCK) {
+      setUnlocked(true);
+    }
+  }, [stats.currentStreak, lockedMode]);
 
   const pickNewTarget = () => {
     const random = Math.floor(Math.random() * CARDS.length);
@@ -89,11 +101,20 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats }) 
     <div className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-4xl mx-auto p-4 animate-in fade-in duration-500">
       
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-8 relative">
         <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-2">
           {t('dojoTitle')}
         </h2>
         <p className="text-slate-400">{t('dojoDesc')}</p>
+        
+        {lockedMode && (
+          <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${unlocked ? 'bg-green-900/30 border-green-500 text-green-400' : 'bg-red-900/30 border-red-500 text-red-400 animate-pulse'}`}>
+            {unlocked ? <CheckCircle2 size={16} /> : <Lock size={16} />}
+            <span className="text-sm font-bold">
+              {unlocked ? t('dojoUnlockedMsg') : `${t('dojoLockedMsg')} (${stats.currentStreak}/${TARGET_STREAK_TO_UNLOCK})`}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Stats Bar */}
@@ -173,9 +194,11 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats }) 
 
       <button 
         onClick={onClose}
-        className="mt-12 text-slate-500 hover:text-white flex items-center gap-2 transition-colors"
+        disabled={lockedMode && !unlocked}
+        className={`mt-12 flex items-center gap-2 transition-colors ${lockedMode && !unlocked ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-white'}`}
       >
-        <RotateCcw size={16} /> {t('exitDojo')}
+        {lockedMode && !unlocked ? <Lock size={16} /> : <RotateCcw size={16} />}
+        {t('exitDojo')}
       </button>
 
     </div>

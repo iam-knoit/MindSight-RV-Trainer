@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
@@ -528,6 +529,7 @@ function App() {
 
   // Intuition Dojo State
   const [intuitionStats, setIntuitionStats] = useState<IntuitionStats | null>(null);
+  const [isDojoLocked, setIsDojoLocked] = useState(false);
 
   // Visual Analysis Tools State
   const [viewMode, setViewMode] = useState<'split' | 'overlay'>('split');
@@ -736,7 +738,7 @@ function App() {
              </div>
           )}
           
-          {state !== SessionState.IDLE && (
+          {state !== SessionState.IDLE && !isDojoLocked && (
             <button
               type="button"
               onClick={goHome}
@@ -835,7 +837,10 @@ function App() {
             {/* Intuition Dojo Button */}
             {user && (
                 <button
-                    onClick={() => setState(SessionState.DOJO)}
+                    onClick={() => {
+                        setIsDojoLocked(false);
+                        setState(SessionState.DOJO);
+                    }}
                     className="px-8 py-4 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-200 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3"
                 >
                     <Zap size={20} />
@@ -1024,6 +1029,8 @@ function App() {
 
   const renderFeedback = () => {
     if (!currentSession) return null;
+    const isLowScore = currentSession.aiScore < 50;
+
     return (
       <div className="max-w-6xl mx-auto p-4 animate-in slide-in-from-bottom-8 duration-700">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -1044,17 +1051,45 @@ function App() {
                  <span className="text-sm font-mono font-bold">{formatDuration(currentSession.durationSeconds)}</span>
                </div>
              )}
-             <button
-               onClick={() => {
-                 sessionRef.current = false;
-                 setState(SessionState.IDLE);
-               }}
-               className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
-             >
-               {t('nextSession')}
-             </button>
+             
+             {isLowScore ? (
+               <button
+                 onClick={() => {
+                   sessionRef.current = false;
+                   setIsDojoLocked(true);
+                   setState(SessionState.DOJO);
+                 }}
+                 className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors font-bold animate-pulse shadow-lg shadow-red-900/40 border border-red-500"
+               >
+                 {t('calibrationRequired')}
+               </button>
+             ) : (
+               <button
+                 onClick={() => {
+                   sessionRef.current = false;
+                   setState(SessionState.IDLE);
+                 }}
+                 className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+               >
+                 {t('nextSession')}
+               </button>
+             )}
           </div>
         </div>
+
+        {/* Low Score Warning Banner */}
+        {isLowScore && (
+          <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-4 mb-6 flex items-center gap-4 animate-in slide-in-from-top-4">
+             <div className="bg-red-900/50 p-3 rounded-full">
+               <AlertTriangle className="text-red-400" size={24} />
+             </div>
+             <div>
+               <h3 className="font-bold text-red-400 uppercase tracking-wide text-sm mb-1">{t('lowScoreWarning')}</h3>
+               <p className="text-slate-300 text-sm">{t('calibrationDesc')}</p>
+             </div>
+          </div>
+        )}
+
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-6">
            <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-wider">
               <Layers size={16} className="text-blue-400" /> {t('visualTools')}
@@ -1204,8 +1239,12 @@ function App() {
         {state === SessionState.IDLE && renderIdle()}
         {state === SessionState.DOJO && (
           <IntuitionDojo 
-            onClose={() => setState(SessionState.IDLE)} 
+            onClose={() => {
+              setIsDojoLocked(false);
+              setState(SessionState.IDLE);
+            }} 
             initialStats={intuitionStats}
+            lockedMode={isDojoLocked}
           />
         )}
         {state === SessionState.VIEWING && renderViewing()}

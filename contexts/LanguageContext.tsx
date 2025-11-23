@@ -77,6 +77,11 @@ const translations = {
     "cardSquare": "Square",
     "cardStar": "Star",
     "exitDojo": "Exit Dojo",
+    "lowScoreWarning": "Low Accuracy Detected",
+    "calibrationRequired": "Intuition Calibration Required",
+    "calibrationDesc": "Your score was below 50%. You must recalibrate your intuition in the Dojo before continuing.",
+    "dojoLockedMsg": "LOCKED: Achieve a Streak of 3 to return.",
+    "dojoUnlockedMsg": "CALIBRATION COMPLETE. You may return.",
 
     // Steps
     "stepFocus": "Focus",
@@ -236,6 +241,11 @@ const translations = {
     "cardSquare": "කොටුව",
     "cardStar": "තරුව",
     "exitDojo": "පිටවන්න",
+    "lowScoreWarning": "අඩු නිරවද්‍යතාවයක් අනාවරණය විය",
+    "calibrationRequired": "ඉව ක්‍රමාංකනය කිරීම අවශ්‍ය වේ",
+    "calibrationDesc": "ඔබගේ ලකුණු 50% ට වඩා අඩු විය. දිගටම කරගෙන යාමට පෙර ඔබ Dojo හි ඔබේ ඉව නැවත ක්‍රමාංකනය කළ යුතුය.",
+    "dojoLockedMsg": "අගුලු දමා ඇත: ආපසු යාමට අඛණ්ඩව 3 වතාවක් නිවැරදි වන්න.",
+    "dojoUnlockedMsg": "ක්‍රමාංකනය සම්පූර්ණයි. ඔබට ආපසු යා හැක.",
 
     // Steps
     "stepFocus": "අවධානය",
