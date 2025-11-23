@@ -10,7 +10,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.6.2';
+const appVersion = process.env.APP_VERSION || '2.6.3';
 
 const translations = {
   en: {
@@ -42,6 +42,7 @@ const translations = {
     "noHistory": "No history yet.",
     "totalTime": "Total Training Time",
     "viewAnalytics": "View Full Analytics",
+    "intuitionDojo": "Intuition Dojo",
 
     // Analytics Modal
     "analyticsTitle": "Performance Analytics",
@@ -60,6 +61,22 @@ const translations = {
     "chatSend": "Send",
     "chatClose": "Close Chat",
     "openChat": "Chat with Coach",
+
+    // Dojo
+    "dojoTitle": "Intuition Dojo",
+    "dojoDesc": "Train your rapid-response intuition with Zener cards. Clear your mind and guess the hidden symbol.",
+    "guessCard": "Guess the Card",
+    "streak": "Streak",
+    "bestStreak": "Best Streak",
+    "accuracy": "Accuracy",
+    "chance": "Chance (20%)",
+    "totalGuesses": "Total",
+    "cardCircle": "Circle",
+    "cardCross": "Cross",
+    "cardWaves": "Waves",
+    "cardSquare": "Square",
+    "cardStar": "Star",
+    "exitDojo": "Exit Dojo",
 
     // Steps
     "stepFocus": "Focus",
@@ -184,6 +201,7 @@ const translations = {
     "noHistory": "තවම ඉතිහාසයක් නැත.",
     "totalTime": "මුළු පුහුණු කාලය",
     "viewAnalytics": "සම්පූර්ණ විශ්ලේෂණය බලන්න",
+    "intuitionDojo": "ඉව පුහුණු අංගනය (Dojo)",
 
     // Analytics Modal
     "analyticsTitle": "කාර්ය සාධන විශ්ලේෂණය",
@@ -202,6 +220,22 @@ const translations = {
     "chatSend": "යවන්න",
     "chatClose": "සංවාදය වසන්න",
     "openChat": "පුහුණුකරු සමඟ කතාබහ",
+
+    // Dojo
+    "dojoTitle": "ඉව පුහුණු අංගනය",
+    "dojoDesc": "Zener කාඩ්පත් සමඟ ඔබේ ප්‍රතිචාර වේගය පුහුණු කරන්න. මනස පැහැදිලි කර සැඟවුණු සංකේතය අනුමාන කරන්න.",
+    "guessCard": "කාඩ්පත අනුමාන කරන්න",
+    "streak": "ජයග්‍රාහී රැල්ල",
+    "bestStreak": "හොඳම රැල්ල",
+    "accuracy": "නිරවද්‍යතාව",
+    "chance": "සම්භාවිතාව (20%)",
+    "totalGuesses": "මුළු වාර ගණන",
+    "cardCircle": "රවුම",
+    "cardCross": "කුරුසය",
+    "cardWaves": "රළ",
+    "cardSquare": "කොටුව",
+    "cardStar": "තරුව",
+    "exitDojo": "පිටවන්න",
 
     // Steps
     "stepFocus": "අවධානය",

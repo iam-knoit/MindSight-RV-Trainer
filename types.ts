@@ -3,6 +3,7 @@ export enum SessionState {
   VIEWING = 'VIEWING',
   ANALYZING = 'ANALYZING',
   FEEDBACK = 'FEEDBACK',
+  DOJO = 'DOJO', // New state for Intuition Dojo
 }
 
 export interface SessionData {
@@ -16,6 +17,13 @@ export interface SessionData {
   aiScore: number;
   aiFeedback: string;
   durationSeconds?: number;
+}
+
+export interface IntuitionStats {
+  totalGuesses: number;
+  correctGuesses: number;
+  currentStreak: number;
+  bestStreak: number;
 }
 
 export interface TargetImage {

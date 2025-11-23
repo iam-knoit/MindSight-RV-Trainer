@@ -16,9 +16,12 @@ import {
   query, 
   orderBy, 
   onSnapshot,
-  Timestamp 
+  Timestamp,
+  doc,
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
-import { SessionData } from '../types';
+import { SessionData, IntuitionStats } from '../types';
 
 // Firebase configuration for MindSight RV Trainer
 const firebaseConfig = {
@@ -102,5 +105,27 @@ export const subscribeToHistory = (userId: string, callback: (sessions: SessionD
       sessions.push(doc.data() as SessionData);
     });
     callback(sessions);
+  });
+};
+
+// --- Intuition Stats Functions ---
+
+export const updateIntuitionStats = async (userId: string, newStats: IntuitionStats) => {
+  try {
+    const statsRef = doc(db, 'users', userId, 'stats', 'intuition');
+    await setDoc(statsRef, newStats, { merge: true });
+  } catch (error) {
+    console.error("Error updating intuition stats", error);
+  }
+};
+
+export const subscribeToIntuitionStats = (userId: string, callback: (stats: IntuitionStats | null) => void) => {
+  const statsRef = doc(db, 'users', userId, 'stats', 'intuition');
+  return onSnapshot(statsRef, (doc) => {
+    if (doc.exists()) {
+      callback(doc.data() as IntuitionStats);
+    } else {
+      callback(null);
+    }
   });
 };

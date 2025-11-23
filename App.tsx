@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast } from 'lucide-react';
-import { SessionState, SessionData, TargetImage, CoachReport } from './types';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap } from 'lucide-react';
+import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
-import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
+import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import HistoryChart from './components/HistoryChart';
 import CoachChat from './components/CoachChat';
 import AnalyticsModal from './components/AnalyticsModal';
+import IntuitionDojo from './components/IntuitionDojo';
 import { useLanguage } from './contexts/LanguageContext';
 
 const generateCoordinate = () => {
@@ -517,23 +518,23 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState(t('initializing'));
   
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showExitConfirm, setShowExitConfirm] = useState(false); // Confirmation modal state
-  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false); // New Analytics Modal state
+  const [showExitConfirm, setShowExitConfirm] = useState(false); 
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false); 
 
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  // Visual Analysis Tools State (Feedback Phase)
+  // Intuition Dojo State
+  const [intuitionStats, setIntuitionStats] = useState<IntuitionStats | null>(null);
+
+  // Visual Analysis Tools State
   const [viewMode, setViewMode] = useState<'split' | 'overlay'>('split');
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [invertSketch, setInvertSketch] = useState(false);
 
-  // Ref to track if the session is currently active/valid.
-  // This prevents race conditions where user exits (goes to IDLE) but async analysis finishes and forces FEEDBACK state.
   const sessionRef = useRef<boolean>(false);
-  // Ref to track start time of a session
   const startTimeRef = useRef<number>(0);
 
   const STEPS = [
@@ -548,19 +549,30 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
-        setHistory([]); // Clear history on logout
+        setHistory([]); 
         setCoachReport(null);
+        setIntuitionStats(null);
       }
       setIsAuthChecking(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Database Sync Observer
+  // Database Sync Observer (History)
   useEffect(() => {
     if (user) {
       const unsubscribe = subscribeToHistory(user.uid, (sessions) => {
         setHistory(sessions);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  // Database Sync Observer (Intuition Stats)
+  useEffect(() => {
+    if (user) {
+      const unsubscribe = subscribeToIntuitionStats(user.uid, (stats) => {
+        setIntuitionStats(stats);
       });
       return () => unsubscribe();
     }
@@ -583,7 +595,6 @@ function App() {
     }
   };
 
-  // Start a new session
   const startSession = async () => {
     if (!user) {
       setShowAuthModal(true);
@@ -593,10 +604,9 @@ function App() {
     setSessionNumber(history.length + 1);
     setIsLoading(true);
     setLoadingMessage(t('startSessionLoading'));
-    sessionRef.current = true; // Mark session as active
-    startTimeRef.current = Date.now(); // Start the training timer
+    sessionRef.current = true; 
+    startTimeRef.current = Date.now(); 
     
-    // Reset Visual Tools defaults
     setViewMode('split');
     setOverlayOpacity(0.5);
     setInvertSketch(false);
@@ -612,7 +622,6 @@ function App() {
       const targetData = await generateTargetImage();
       setTarget(targetData);
       
-      // Check if user cancelled during loading
       if (sessionRef.current) {
         setState(SessionState.VIEWING);
       }
@@ -627,14 +636,11 @@ function App() {
 
   const goHome = () => {
     if (state === SessionState.IDLE) return;
-
     const shouldConfirm = state === SessionState.VIEWING || state === SessionState.ANALYZING;
 
     if (shouldConfirm) {
-      // Use custom modal instead of window.confirm
       setShowExitConfirm(true);
     } else {
-      // In Feedback state, just go home immediately
       sessionRef.current = false;
       setState(SessionState.IDLE);
     }
@@ -646,22 +652,14 @@ function App() {
     setShowExitConfirm(false);
   };
 
-  // Submit session for analysis
   const submitSession = async () => {
     if (!target || !user) return;
-    
     setAnalysisError(null);
     setState(SessionState.ANALYZING);
-    
     try {
       const result = await analyzeSession(target.base64, userSketch, userNotes, language);
-      
-      // Check if user cancelled during analysis (e.g. clicked Home)
       if (!sessionRef.current) return;
-
-      // Calculate session duration in seconds
       const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
-
       const newSession: SessionData = {
         id: Date.now().toString(),
         coordinate,
@@ -674,16 +672,13 @@ function App() {
         aiFeedback: result.feedback,
         durationSeconds: durationSeconds
       };
-
       setCurrentSession(newSession);
       await saveSessionToCloud(user.uid, newSession);
-      
       if (sessionRef.current) {
         setState(SessionState.FEEDBACK);
       }
     } catch (e) {
       console.error("Session submission failed:", e);
-      // Only show error if session is still active
       if (sessionRef.current) {
         setAnalysisError(t('analysisFailed'));
       }
@@ -702,14 +697,12 @@ function App() {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    
     if (h > 0) return `${h}h ${m}${t('min')}`;
     if (m > 0) return `${m}${t('min')} ${s}${t('sec')}`;
     return `${s}${t('sec')}`;
   };
 
   const renderHeader = () => (
-    // Z-Index increased to z-40 to ensure it stays above content animations like breathing circle (z-10)
     <header className="w-full p-6 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <button type="button" onClick={goHome} className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left group">
@@ -725,7 +718,7 @@ function App() {
         </button>
         
         <div className="flex items-center gap-6">
-          {state !== SessionState.IDLE && (
+          {state !== SessionState.IDLE && state !== SessionState.DOJO && (
              <div className="hidden md:flex items-center gap-4">
                <div className="bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 font-mono text-sm font-bold text-blue-400">
                   {t('session')} #{sessionNumber}
@@ -743,7 +736,6 @@ function App() {
              </div>
           )}
           
-          {/* Explicit Exit Button for Mobile/Desktop when in ANY active session state */}
           {state !== SessionState.IDLE && (
             <button
               type="button"
@@ -755,7 +747,6 @@ function App() {
             </button>
           )}
 
-          {/* Language Switcher */}
           <button
             type="button"
             onClick={() => setLanguage(language === 'en' ? 'si' : 'en')}
@@ -799,12 +790,9 @@ function App() {
   );
 
   const renderIdle = () => {
-    // Calculate total training time
     const totalSeconds = history.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
-
     return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 w-full max-w-5xl mx-auto relative">
-      
       <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 mb-12">
         <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 mx-auto border border-slate-700 relative group">
           <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-all"></div>
@@ -815,49 +803,56 @@ function App() {
           {user ? `${t('welcomeBack')}, ${user.displayName ? user.displayName.split(' ')[0] : t('viewer')}` : t('readyToTrain')}
         </h2>
         <p className="text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
-          {user 
-            ? t('introAuth')
-            : t('introGuest')}
+          {user ? t('introAuth') : t('introGuest')}
         </p>
         
-        {user ? (
-          <button
-            type="button"
-            onClick={startSession}
-            disabled={isLoading}
-            className="mx-auto group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <Sparkles className="animate-spin" />
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {user ? (
+            <button
+                type="button"
+                onClick={startSession}
+                disabled={isLoading}
+                className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                {isLoading ? (
+                <Sparkles className="animate-spin" />
+                ) : (
+                <Play className="fill-white" size={20} />
+                )}
+                {isLoading ? loadingMessage : t('startSession')}
+            </button>
             ) : (
-              <Play className="fill-white" size={20} />
+            <button
+                type="button"
+                onClick={() => setShowAuthModal(true)}
+                className="px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all flex items-center justify-center gap-3"
+            >
+                <UserIcon size={20} />
+                {t('signInRegister')}
+            </button>
             )}
-            {isLoading ? loadingMessage : t('startSession')}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowAuthModal(true)}
-            className="mx-auto px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all flex items-center gap-3"
-          >
-             <UserIcon size={20} />
-             {t('signInRegister')}
-          </button>
-        )}
+
+            {/* Intuition Dojo Button */}
+            {user && (
+                <button
+                    onClick={() => setState(SessionState.DOJO)}
+                    className="px-8 py-4 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-200 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3"
+                >
+                    <Zap size={20} />
+                    {t('intuitionDojo')}
+                </button>
+            )}
+        </div>
       </div>
 
-      {/* Past History Section */}
       {user && history.length > 0 && (
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-1000 delay-200">
-          
-          {/* Left Col: Chart */}
           <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
                 <History size={18} /> {t('historyTitle')}
               </h3>
               <div className="flex gap-2">
-                 {/* Analytics Button (New) */}
                  <button 
                     onClick={() => setShowAnalyticsModal(true)}
                     className="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-full border border-slate-700 transition-all flex items-center gap-2"
@@ -865,8 +860,6 @@ function App() {
                     <BarChart3 size={12} />
                     {t('viewAnalytics')}
                  </button>
-
-                 {/* Chat Button */}
                  <button 
                    onClick={() => setShowChat(true)}
                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
@@ -877,8 +870,6 @@ function App() {
               </div>
             </div>
             <HistoryChart sessions={history} />
-            
-            {/* Total Time Stats */}
             <div className="mt-4 pt-4 border-t border-slate-800 flex justify-end">
               <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
                 <Clock size={14} />
@@ -888,7 +879,6 @@ function App() {
             </div>
           </div>
 
-          {/* Right Col: Coach Report or Placeholder */}
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 flex flex-col">
             {coachReport ? (
               <div className="space-y-4 animate-in slide-in-from-right duration-500">
@@ -906,9 +896,7 @@ function App() {
                     {analyzingHistory ? t('analyzing') : t('regenerateReport')}
                   </button>
                 </div>
-                
                 <p className="text-sm text-slate-300 italic">"{coachReport.trendSummary}"</p>
-                
                 <div className="space-y-3 mt-4">
                    <div className="bg-green-900/10 border border-green-900/30 rounded-lg p-3">
                       <h4 className="text-green-400 text-xs font-bold mb-2 flex items-center gap-1"><Check size={12}/> {t('strengths')}</h4>
@@ -923,7 +911,6 @@ function App() {
                       </ul>
                    </div>
                 </div>
-
                 <div className="mt-auto pt-4 border-t border-slate-800">
                    <h4 className="text-blue-400 text-xs font-bold mb-2 flex items-center gap-1"><Lightbulb size={12}/> {t('tip')}</h4>
                    <p className="text-xs text-slate-400">{coachReport.trainingTips[0]}</p>
@@ -956,7 +943,6 @@ function App() {
 
   const renderViewing = () => (
     <div className="max-w-6xl mx-auto p-4 w-full min-h-[70vh] flex flex-col">
-      {/* Progress Bar */}
       <div className="mb-8 flex justify-center">
          <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-full border border-slate-800 backdrop-blur-sm">
            {STEPS.map((s) => (
@@ -970,13 +956,9 @@ function App() {
            ))}
          </div>
       </div>
-
-      {/* Step Content Container */}
       <div className="flex-grow relative flex flex-col">
          {step === 1 && <Step1Focus coordinate={coordinate} onNext={nextStep} />}
          {step === 2 && <Step2Impressions notes={userNotes} onChange={setUserNotes} onNext={nextStep} onBack={prevStep} />}
-         
-         {/* Special handling for SketchPad to preserve state: Keep mounted but hide */}
          <div className={`flex flex-col h-full ${step === 3 ? 'flex' : 'hidden'}`}>
            <div className="text-center mb-4">
               <h2 className="text-2xl font-bold text-white">{t('stage2Title')}</h2>
@@ -994,7 +976,6 @@ function App() {
               </button>
            </div>
          </div>
-
          {step === 4 && <Step4Review notes={userNotes} sketch={userSketch} onSubmit={submitSession} onBack={prevStep} />}
       </div>
     </div>
@@ -1009,7 +990,6 @@ function App() {
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">{t('analysisFailed')}</h2>
                 <p className="text-slate-400 mb-8 max-w-md">{t('analysisErrorDesc')}</p>
-                
                 <div className="flex flex-wrap justify-center gap-4">
                     <button 
                         onClick={() => {
@@ -1030,7 +1010,6 @@ function App() {
             </div>
         );
     }
-
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-500">
         <div className="relative mb-8">
@@ -1045,7 +1024,6 @@ function App() {
 
   const renderFeedback = () => {
     if (!currentSession) return null;
-
     return (
       <div className="max-w-6xl mx-auto p-4 animate-in slide-in-from-bottom-8 duration-700">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -1077,13 +1055,10 @@ function App() {
              </button>
           </div>
         </div>
-
-        {/* Visual Analysis Toolbar */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-6">
            <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-wider">
               <Layers size={16} className="text-blue-400" /> {t('visualTools')}
            </div>
-           
            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
               <button 
                 onClick={() => setViewMode('split')}
@@ -1098,7 +1073,6 @@ function App() {
                 {t('modeOverlay')}
               </button>
            </div>
-
            {viewMode === 'overlay' && (
              <div className="flex items-center gap-4 animate-in fade-in duration-300">
                 <div className="flex items-center gap-2">
@@ -1122,11 +1096,8 @@ function App() {
              </div>
            )}
         </div>
-
-        {/* Main Visual Area */}
         {viewMode === 'split' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Target Reveal */}
             <div className="space-y-2">
               <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
                 {t('actualTarget')}
@@ -1139,8 +1110,6 @@ function App() {
                 />
               </div>
             </div>
-
-            {/* User Sketch Review */}
             <div className="space-y-2">
               <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
                 {t('yourSketch')}
@@ -1155,16 +1124,13 @@ function App() {
             </div>
           </div>
         ) : (
-          /* Overlay Mode */
           <div className="w-full max-w-3xl mx-auto mb-8 animate-in zoom-in-95 duration-300">
              <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
-                {/* Background: Target */}
                 <img 
                   src={currentSession.targetImageUrl} 
                   alt="Target" 
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-                {/* Foreground: Sketch */}
                 {currentSession.userSketchBase64 && (
                   <img 
                     src={currentSession.userSketchBase64} 
@@ -1183,8 +1149,6 @@ function App() {
              </p>
           </div>
         )}
-
-        {/* Analysis Text */}
         <div className="bg-slate-800/50 rounded-2xl p-8 border border-slate-700 mb-8">
            <h3 className="text-xl font-semibold text-blue-400 mb-4 flex items-center gap-2">
              <Sparkles size={20} /> {t('aiAnalysis')}
@@ -1193,7 +1157,6 @@ function App() {
              {currentSession.aiFeedback}
            </p>
         </div>
-        
         <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
           <h3 className="text-lg font-semibold text-slate-300 mb-4">{t('trendTitle')}</h3>
           <HistoryChart sessions={history} />
@@ -1227,7 +1190,6 @@ function App() {
         coachReport={coachReport} 
       />
       
-      {/* Chat Interface */}
       {user && (
         <CoachChat 
           isOpen={showChat} 
@@ -1240,6 +1202,12 @@ function App() {
       
       <main className="relative z-0 flex-grow flex flex-col">
         {state === SessionState.IDLE && renderIdle()}
+        {state === SessionState.DOJO && (
+          <IntuitionDojo 
+            onClose={() => setState(SessionState.IDLE)} 
+            initialStats={intuitionStats}
+          />
+        )}
         {state === SessionState.VIEWING && renderViewing()}
         {state === SessionState.ANALYZING && renderAnalyzing()}
         {state === SessionState.FEEDBACK && renderFeedback()}
