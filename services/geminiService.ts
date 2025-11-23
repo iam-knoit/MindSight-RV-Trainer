@@ -70,7 +70,7 @@ export const analyzeSession = async (
 
       Provide a JSON response with:
       - score: An integer from 0 to 100 representing accuracy.
-      - feedback: A concise (max 3 sentences) analysis of what they got right and what they missed. Be professional and encouraging.
+      - feedback: A detailed analysis (at least 3-5 sentences) of what they got right and what they missed. Expand on observed strengths and weaknesses in their sketch and notes compared to the target. Be professional and encouraging.
     `
   });
 

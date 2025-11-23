@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3 } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory } from './services/firebase';
@@ -525,6 +525,11 @@ function App() {
   const [showChat, setShowChat] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
+  // Visual Analysis Tools State (Feedback Phase)
+  const [viewMode, setViewMode] = useState<'split' | 'overlay'>('split');
+  const [overlayOpacity, setOverlayOpacity] = useState(0.5);
+  const [invertSketch, setInvertSketch] = useState(false);
+
   // Ref to track if the session is currently active/valid.
   // This prevents race conditions where user exits (goes to IDLE) but async analysis finishes and forces FEEDBACK state.
   const sessionRef = useRef<boolean>(false);
@@ -590,6 +595,11 @@ function App() {
     setLoadingMessage(t('startSessionLoading'));
     sessionRef.current = true; // Mark session as active
     startTimeRef.current = Date.now(); // Start the training timer
+    
+    // Reset Visual Tools defaults
+    setViewMode('split');
+    setOverlayOpacity(0.5);
+    setInvertSketch(false);
 
     try {
       const newCoord = generateCoordinate();
@@ -1068,35 +1078,111 @@ function App() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Target Reveal */}
-          <div className="space-y-2">
-            <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
-              {t('actualTarget')}
-            </div>
-            <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3]">
-              <img 
-                src={currentSession.targetImageUrl} 
-                alt="Target" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-          </div>
+        {/* Visual Analysis Toolbar */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-6">
+           <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-wider">
+              <Layers size={16} className="text-blue-400" /> {t('visualTools')}
+           </div>
+           
+           <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+              <button 
+                onClick={() => setViewMode('split')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'split' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                {t('modeSplit')}
+              </button>
+              <button 
+                onClick={() => setViewMode('overlay')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'overlay' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                {t('modeOverlay')}
+              </button>
+           </div>
 
-          {/* User Sketch Review */}
-          <div className="space-y-2">
-            <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
-              {t('yourSketch')}
+           {viewMode === 'overlay' && (
+             <div className="flex items-center gap-4 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2">
+                   <Sliders size={14} className="text-slate-500" />
+                   <span className="text-xs text-slate-400">{t('opacity')}</span>
+                   <input 
+                     type="range" 
+                     min="0" 
+                     max="100" 
+                     value={overlayOpacity * 100} 
+                     onChange={(e) => setOverlayOpacity(parseInt(e.target.value) / 100)}
+                     className="w-24 accent-blue-500"
+                   />
+                </div>
+                <button 
+                  onClick={() => setInvertSketch(!invertSketch)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${invertSketch ? 'bg-blue-900/30 border-blue-500/50 text-blue-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
+                >
+                   <Contrast size={14} /> {t('invertSketch')}
+                </button>
+             </div>
+           )}
+        </div>
+
+        {/* Main Visual Area */}
+        {viewMode === 'split' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Target Reveal */}
+            <div className="space-y-2">
+              <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
+                {t('actualTarget')}
+              </div>
+              <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3]">
+                <img 
+                  src={currentSession.targetImageUrl} 
+                  alt="Target" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
             </div>
-            <div className="relative rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3] bg-white">
-               {currentSession.userSketchBase64 ? (
-                 <img src={currentSession.userSketchBase64} alt="Sketch" className="w-full h-full object-contain" />
-               ) : (
-                 <div className="flex items-center justify-center h-full text-slate-400">{t('noSketch')}</div>
-               )}
+
+            {/* User Sketch Review */}
+            <div className="space-y-2">
+              <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
+                {t('yourSketch')}
+              </div>
+              <div className="relative rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3] bg-white">
+                {currentSession.userSketchBase64 ? (
+                  <img src={currentSession.userSketchBase64} alt="Sketch" className="w-full h-full object-contain" />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-400">{t('noSketch')}</div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Overlay Mode */
+          <div className="w-full max-w-3xl mx-auto mb-8 animate-in zoom-in-95 duration-300">
+             <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
+                {/* Background: Target */}
+                <img 
+                  src={currentSession.targetImageUrl} 
+                  alt="Target" 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Foreground: Sketch */}
+                {currentSession.userSketchBase64 && (
+                  <img 
+                    src={currentSession.userSketchBase64} 
+                    alt="Sketch Overlay" 
+                    className="absolute inset-0 w-full h-full object-contain mix-blend-multiply pointer-events-none transition-all duration-200"
+                    style={{ 
+                      opacity: overlayOpacity,
+                      filter: invertSketch ? 'invert(1)' : 'none',
+                      mixBlendMode: invertSketch ? 'screen' : 'multiply'
+                    }}
+                  />
+                )}
+             </div>
+             <p className="text-center text-slate-500 text-sm mt-2">
+               Adjust opacity to compare structural alignment. Use Invert for dark targets.
+             </p>
+          </div>
+        )}
 
         {/* Analysis Text */}
         <div className="bg-slate-800/50 rounded-2xl p-8 border border-slate-700 mb-8">

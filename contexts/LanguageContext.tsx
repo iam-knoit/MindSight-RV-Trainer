@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 type Language = 'en' | 'si';
@@ -125,6 +126,11 @@ const translations = {
     "duration": "Duration",
     "min": "m",
     "sec": "s",
+    "visualTools": "Visual Analysis Tools",
+    "modeSplit": "Side-by-Side",
+    "modeOverlay": "Overlay",
+    "opacity": "Opacity",
+    "invertSketch": "Invert Sketch",
 
     // Auth Modal
     "welcomeBackAuth": "Welcome Back",
@@ -262,6 +268,11 @@ const translations = {
     "duration": "කාලය",
     "min": "විනාඩි",
     "sec": "තත්",
+    "visualTools": "දෘශ්‍ය විශ්ලේෂණ මෙවලම්",
+    "modeSplit": "පසෙකින්",
+    "modeOverlay": "උඩින් තබා",
+    "opacity": "විනිවිදභාවය",
+    "invertSketch": "වර්ණ පෙරලන්න",
 
     // Auth Modal
     "welcomeBackAuth": "නැවත සාදරයෙන් පිළිගනිමු",
