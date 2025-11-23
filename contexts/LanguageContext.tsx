@@ -10,7 +10,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.6.3';
+const appVersion = process.env.APP_VERSION || '2.6.4';
 
 const translations = {
   en: {
@@ -153,6 +153,10 @@ const translations = {
     "modeOverlay": "Overlay",
     "opacity": "Opacity",
     "invertSketch": "Invert Sketch",
+    "addRemarks": "Add Post-Session Remarks (Optional)",
+    "addRemarksDesc": "Describe any issues, clarifications, or thoughts about this result.",
+    "saveRemarks": "Save Remarks",
+    "remarksSaved": "Remarks Saved",
 
     // Auth Modal
     "welcomeBackAuth": "Welcome Back",
@@ -317,6 +321,10 @@ const translations = {
     "modeOverlay": "උඩින් තබා",
     "opacity": "විනිවිදභාවය",
     "invertSketch": "වර්ණ පෙරලන්න",
+    "addRemarks": "පසු සැසි සටහන් එක් කරන්න (විකල්ප)",
+    "addRemarksDesc": "මෙම ප්‍රතිඵලය ගැන ඕනෑම ගැටලුවක්, පැහැදිලි කිරීමක් හෝ අදහසක් විස්තර කරන්න.",
+    "saveRemarks": "සටහන් සුරකින්න",
+    "remarksSaved": "සටහන් සුරැකිනි",
 
     // Auth Modal
     "welcomeBackAuth": "නැවත සාදරයෙන් පිළිගනිමු",

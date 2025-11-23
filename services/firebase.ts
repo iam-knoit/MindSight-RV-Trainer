@@ -19,7 +19,8 @@ import {
   Timestamp,
   doc,
   setDoc,
-  getDoc
+  getDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { SessionData, IntuitionStats } from '../types';
 
@@ -83,13 +84,26 @@ export const logOut = async () => {
 
 export const saveSessionToCloud = async (userId: string, session: SessionData) => {
   try {
-    const sessionsRef = collection(db, 'users', userId, 'sessions');
-    await addDoc(sessionsRef, {
+    // Use the session.id (timestamp string) as the document ID for easier updates
+    const sessionRef = doc(db, 'users', userId, 'sessions', session.id);
+    await setDoc(sessionRef, {
       ...session,
       createdAt: Timestamp.now()
     });
   } catch (error) {
     console.error("Error saving session to cloud", error);
+    throw error;
+  }
+};
+
+export const updateSessionRemarks = async (userId: string, sessionId: string, remarks: string) => {
+  try {
+    const sessionRef = doc(db, 'users', userId, 'sessions', sessionId);
+    await updateDoc(sessionRef, {
+      postSessionRemarks: remarks
+    });
+  } catch (error) {
+    console.error("Error updating session remarks", error);
     throw error;
   }
 };

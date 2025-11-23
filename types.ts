@@ -17,6 +17,7 @@ export interface SessionData {
   aiScore: number;
   aiFeedback: string;
   durationSeconds?: number;
+  postSessionRemarks?: string; // New field for user comments after result
 }
 
 export interface IntuitionStats {
