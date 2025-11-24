@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, LogIn, LogOut, User as UserIcon, AlertTriangle, XCircle, RefreshCw, Globe, CheckCircle2, Eraser, Brain, Sparkles, Image as ImageIcon, CheckCircle, Save, ArrowLeft, ArrowRight, Compass } from 'lucide-react';
+import { Eye, LogIn, LogOut, User as UserIcon, AlertTriangle, XCircle, RefreshCw, CheckCircle2, Eraser, Brain, Sparkles, Image as ImageIcon, CheckCircle, Save, ArrowLeft, ArrowRight, Compass } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats, SessionType } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore, analyzeOpenSession, generateVisualReconstruction } from './services/geminiService';
 import { auth, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData, deleteSession } from './services/firebase';
@@ -30,7 +30,7 @@ const generateCoordinate = () => {
 };
 
 function App() {
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [state, setState] = useState<SessionState>(SessionState.IDLE);
@@ -119,6 +119,16 @@ function App() {
         alert("Failed to delete session");
     }
   };
+  
+  const handleUpdateSession = async (sessionId: string, data: Partial<SessionData>) => {
+    if (!user) return;
+    try {
+      await updateSessionData(user.uid, sessionId, data);
+    } catch (e) {
+      console.error("Update failed", e);
+      alert("Failed to update session data");
+    }
+  };
 
   const runCoachAnalysis = async () => {
     if (history.length < 3) {
@@ -128,7 +138,7 @@ function App() {
     setAnalyzingHistory(true);
     try {
       const trainingSessions = history.filter(s => s.sessionType !== 'OPEN');
-      const report = await generateCoachReport(trainingSessions, language);
+      const report = await generateCoachReport(trainingSessions);
       setCoachReport(report);
     } catch (e) {
       console.error(e);
@@ -142,7 +152,7 @@ function App() {
       if (!user) return;
       setIsOpenAnalyzing(true);
       try {
-          const result = await analyzeOpenSession(session.userSketchBase64, session.userNotes, language);
+          const result = await analyzeOpenSession(session.userSketchBase64, session.userNotes);
           
           const updatedData: Partial<SessionData> = {
               aiGuessedSubject: result.subject,
@@ -285,7 +295,7 @@ function App() {
     if (!target) return;
     setState(SessionState.ANALYZING);
     try {
-      const result = await analyzeSession(target.base64, userSketch, userNotes, language);
+      const result = await analyzeSession(target.base64, userSketch, userNotes);
       if (!sessionRef.current) return;
       
       const newSession: SessionData = {
@@ -312,7 +322,7 @@ function App() {
         let updatedData: Partial<SessionData> = { postSessionRemarks: remarksInput };
 
         if (currentSession.sessionType === 'TRAINING' && currentSession.targetImageBase64) {
-             const recalculated = await recalculateScore(currentSession, remarksInput, language);
+             const recalculated = await recalculateScore(currentSession, remarksInput);
              updatedData.aiScore = recalculated.score;
              updatedData.aiFeedback = recalculated.feedback;
         }
@@ -381,15 +391,6 @@ function App() {
               <XCircle size={20} />
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => setLanguage(language === 'en' ? 'si' : 'en')}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full transition-colors"
-          >
-            <Globe size={14} className="text-slate-400"/>
-            <span className="text-xs font-semibold text-slate-200">{language === 'en' ? '🇺🇸 EN' : '🇱🇰 SI'}</span>
-          </button>
 
           {user ? (
             <div className="flex items-center gap-4">
@@ -556,7 +557,7 @@ function App() {
       <ModeSelectionModal isOpen={showModeSelection} onClose={() => setShowModeSelection(false)} onSelectTraining={() => handleStartSession('TRAINING')} onSelectOpen={(intent) => handleStartSession('OPEN', intent)} />
       <ConfirmationModal isOpen={showExitConfirm} title="Exit Session?" message={t('confirmExit')} onConfirm={confirmExitSession} onCancel={() => setShowExitConfirm(false)} />
       <AnalyticsModal isOpen={showAnalyticsModal} onClose={() => setShowAnalyticsModal(false)} history={history} coachReport={coachReport} />
-      <SessionLogModal isOpen={showSessionLog} onClose={() => setShowSessionLog(false)} history={history} onDeleteSession={handleDeleteSession} />
+      <SessionLogModal isOpen={showSessionLog} onClose={() => setShowSessionLog(false)} history={history} onDeleteSession={handleDeleteSession} onUpdateSession={handleUpdateSession} />
       
       {user && <CoachChat isOpen={showChat} onClose={() => setShowChat(false)} history={history} />}
 

@@ -1,7 +1,7 @@
 
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 
-type Language = 'en' | 'si';
+type Language = 'en';
 
 interface LanguageContextType {
   language: Language;
@@ -10,7 +10,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.6.9';
+const appVersion = process.env.APP_VERSION || '2.7.0';
 
 const translations = {
   en: {
@@ -228,6 +228,7 @@ const translations = {
     "generatingImage": "Painting...",
     "generateImageDesc": "Ask AI to draw what it thinks you saw based on your intent + sketch.",
     "aiVisualDesc": "This is an AI-generated visualization of your target based on your data.",
+    "reconstructionDetails": "Optional: Add extra details to guide the generation (e.g. 'Viewed from above', 'Night time')",
 
     // Auth Modal
     "welcomeBackAuth": "Welcome Back",
@@ -251,264 +252,23 @@ const translations = {
     // Navigation
     "confirmExit": "Are you sure you want to exit? Current session data will be lost.",
     "exitSession": "Exit Session",
-  },
-  si: {
-    // Meta / Global
-    "appTitle": "MindSight",
-    "appSubtitle": `RV පුහුණු ප්‍රොටෝකෝලය v${appVersion}`,
-    "login": "පිවිසෙන්න",
-    "logout": "ඉවත් වන්න",
-    "operator": "ක්‍රියාකරු",
-    "viewer": "නිරීක්ෂකයා",
-    "session": "සැසිය",
-
-    // Dashboard (Idle)
-    "welcomeBack": "නැවත සාදරයෙන් පිළිගනිමු",
-    "readyToTrain": "පුහුණුවට සූදානම්ද?",
-    "introAuth": "අන්ධ සැසියක් අරඹන්න. ප්‍රතිපෝෂණයට පෙර ඔබේ දත්ත වාර්තා කිරීමට පියවර 4 කින් යුත් ක්‍රියාවලිය අනුගමනය කරන්න.",
-    "introGuest": "උපාංග හරහා ඔබේ ප්‍රගතිය නිරීක්ෂණය කිරීමට සහ AI සමඟ ඔබේ සැසි විශ්ලේෂණය කිරීමට පුරන්න.",
-    "startSession": "නව සැසියක් අරඹන්න",
-    "startSessionLoading": "ඉලක්කය ලබා ගනිමින්...",
-    "initializing": "ආරම්භ කරමින්...",
-    "signInRegister": "ලියාපදිංචි වීම / ඇතුල් වීම",
-    "historyTitle": "කාර්ය සාධන ඉතිහාසය",
-    "aiCoachBtn": "AI උපදේශක වාර්තාව",
-    "aiCoachReady": "AI විශ්ලේෂණය සූදානම්",
-    "aiCoachUnlock": "පුද්ගලීකරණය කළ පුහුණු උපදෙස් ලබා ගැනීමට සැසි 3ක් සම්පූර්ණ කරන්න.",
-    "analyzing": "විශ්ලේෂණය කරමින්...",
-    "generateReport": "වාර්තාව සදන්න",
-    "regenerateReport": "වාර්තාව අලුත් කරන්න",
-    "noHistory": "තවම ඉතිහාසයක් නැත.",
-    "totalTime": "මුළු පුහුණු කාලය",
-    "viewAnalytics": "සම්පූර්ණ විශ්ලේෂණය බලන්න",
-    "intuitionDojo": "ඉව පුහුණු අංගනය (Dojo)",
-    "sessionLog": "සැසි සටහන",
-    "logTitle": "සම්පූර්ණ සැසි ලොගය",
-    "deleteSession": "මකන්න",
-    "confirmDelete": "මෙම සැසිය ස්ථිරවම මකන්නද?",
-
-    // Session Modes
-    "selectMode": "සැසි මාදිලිය තෝරන්න",
-    "modeTraining": "සම්මත පුහුණුව",
-    "modeTrainingDesc": "AI විසින් අන්ධ ඡායාරූප ඉලක්කයක් ජනනය කර ඔබගේ නිරවද්‍යතාවය ලකුණු කරයි.",
-    "modeOpen": "විවෘත ගවේෂණය (Open Exploration)",
-    "modeOpenDesc": "සැබෑ ලෝකයේ ඉලක්කයක් බලන්න (උදා: නැතිවූ වස්තුව, අනාගත සිදුවීම). AI ලකුණු ලබා දීමක් සිදු නොවේ.",
-    "enterIntent": "ඉලක්ක අරමුණ ඇතුළත් කරන්න (විකල්ප)",
-    "intentPlaceholder": "උදා: නැතිවූ යතුරු ඇති ස්ථානය...",
-    "intentDesc": "ඔබ සොයන දේ විස්තර කරන්න. මෙය පසුව ඔබගේ දත්ත තහවුරු කිරීමට උපකාරී වේ.",
-    "startOpenSession": "විවෘත සැසිය අරඹන්න",
-
-    // Leveling System
-    "level": "මට්ටම",
-    "division": "කාණ්ඩය",
-    "currentRank": "වත්මන් තනතුර",
-    "nextRank": "ඊළඟ තනතුර",
-    "lvl1": "ආධුනික (Novice)",
-    "lvl2": "ආධුනික II (Apprentice)",
-    "lvl3": "ආරම්භක (Initiate)",
-    "lvl4": "නිරීක්ෂක (Viewer)",
-    "lvl5": "අධීක්ෂක (Monitor)",
-    "lvl6": "ක්‍රියාකරු (Operator)",
-    "lvl7": "විශේෂඥ (Specialist)",
-    "lvl8": "ප්‍රවීණ (Expert)",
-    "lvl9": "දිවැස් (Oracle)",
-
-    // Level Capabilities Descriptions
-    "cap_lvl1": "සංඥා මාර්ගය ස්ථාපිත කිරීම. පරිකල්පනය (AOL) සහ සත්‍ය සංවේදක සංඥා අතර වෙනස හඳුනා ගැනීමට ඔබ ඉගෙන ගනිමින් සිටී.",
-    "cap_lvl2": "මූලික වෙනස්කම් හඳුනාගැනීම. ගොඩබිම සහ ජලය, මිනිසා සාදන ලද සහ ස්වභාවික, අඳුරු සහ ආලෝකය වැනි මූලික වෙනස්කම් ඔබට වටහා ගත හැකිය.",
-    "cap_lvl3": "සංවේදක දත්ත ලබා ගැනීම. ඔබට මූලික සංවේදක හැඟීම් අඛණ්ඩව වාර්තා කළ හැකිය: වර්ණ, උෂ්ණත්වය, සුවඳ සහ මතුපිට ස්වභාවය.",
-    "cap_lvl4": "මානමය සංජානනය. ඔබ හැඩතල සහ රූප දැකීමට පටන් ගෙන ඇත. මූලික දළ සටහන් සහ අවකාශීය සම්බන්ධතා ඇඳීමට හැකිය.",
-    "cap_lvl5": "විශ්වාසදායක සම්බන්ධතාවය. ඔබට ඉලක්කයක ප්‍රධාන වස්තුව විශ්වාසදායක ලෙස විස්තර කළ හැකිය. මූලික පුහුණු කණ්ඩායම් සඳහා සුදුසු වේ.",
-    "cap_lvl6": "ක්‍රියාකාරී නිපුණතාවය. ඔබට නිශ්චිත වස්තූන් සහ ඒවායේ ක්‍රියාකාරකම් හඳුනාගත හැකිය. සංකීර්ණ දර්ශන මධ්‍යස්ථ නිරවද්‍යතාවයකින් විස්තර කිරීමට හැකිය.",
-    "cap_lvl7": "ඉහළ විභේදන දත්ත. ඔබට සමාන වස්තූන් අතර වෙනස හඳුනාගත හැකි අතර සවිස්තරාත්මක වාස්තුවිද්‍යාත්මක හෝ යාන්ත්‍රික ලක්ෂණ විස්තර කළ හැකිය.",
-    "cap_lvl8": "විශේෂඥ නිරවද්‍යතාවය. අන්ධ මෙහෙයුම් කටයුතු සඳහා හැකියාව ඇත. ඔබේ සිතුවම් බොහෝ විට ඉලක්කයේ දෘෂ්ටිකෝණය සහ ජ්‍යාමිතිය සමඟ සමීපව ගැලපේ.",
-    "cap_lvl9": "ප්‍රවීණත්වය. පරිපූර්ණ ආසන්න ද්වි-ස්ථානගත වීම. ඔබට ඉලක්ක ස්ථානයේ ගැඹුරු සංකල්පීය දත්ත, හැඟීම් සහ සැඟවුණු විස්තර වෙත පිවිසිය හැකිය.",
-
-    // Analytics Modal
-    "analyticsTitle": "කාර්ය සාධන විශ්ලේෂණය",
-    "avgScore": "සාමාන්‍ය ලකුණු",
-    "bestScore": "හොඳම ලකුණු",
-    "totalSessions": "මුළු සැසි",
-    "currentCapabilities": "වත්මන් හැකියාවන්",
-    "currentCapabilitiesDesc": "ඔබේ තරාතිරම මත පදනම්ව, ඔබේ තක්සේරු කළ මෙහෙයුම් හැකියාව මෙන්න.",
-    "rankRoadmap": "තනතුරු සිතියම",
-    "close": "වසන්න",
-    "aiCoachPrompt": "ඔබගේ නිර්දේශිත ක්‍රියාව බැලීමට උපකරණ පුවරුවේ 'AI උපදේශක වාර්තාව' ක්ලික් කරන්න.",
-
-    // Chat
-    "chatTitle": "පුහුණුකරු සහායක",
-    "chatPlaceholder": "ඔබේ ප්‍රගතිය ගැන හෝ RV ක්‍රම ගැන අසන්න...",
-    "chatWelcome": "ආයුබෝවන්! මම ඔබේ දුරස්ථ නිරීක්ෂණ පුහුණුකරු වෙමි. මම ඔබේ සැසි ඉතිහාසය සමාලෝචනය කළෙමි. මම ඔබට උදව් කරන්නේ කෙසේද?",
-    "chatSend": "යවන්න",
-    "chatClose": "සංවාදය වසන්න",
-    "openChat": "පුහුණුකරු සමඟ කතාබහ",
-
-    // Dojo
-    "dojoTitle": "ඉව පුහුණු අංගනය",
-    "dojoDesc": "Zener කාඩ්පත් සමඟ ඔබේ ප්‍රතිචාර වේගය පුහුණු කරන්න. මනස පැහැදිලි කර සැඟවුණු සංකේතය අනුමාන කරන්න.",
-    "guessCard": "කාඩ්පත අනුමාන කරන්න",
-    "streak": "ජයග්‍රාහී රැල්ල",
-    "bestStreak": "හොඳම රැල්ල",
-    "accuracy": "නිරවද්‍යතාව",
-    "chance": "සම්භාවිතාව (20%)",
-    "totalGuesses": "මුළු වාර ගණන",
-    "cardCircle": "රවුම",
-    "cardCross": "කුරුසය",
-    "cardWaves": "රළ",
-    "cardSquare": "කොටුව",
-    "cardStar": "තරුව",
-    "exitDojo": "පිටවන්න",
-    "lowScoreWarning": "අඩු නිරවද්‍යතාවයක් අනාවරණය විය",
-    "calibrationRequired": "ඉව ක්‍රමාංකනය කිරීම අවශ්‍ය වේ",
-    "calibrationDesc": "ඔබගේ ලකුණු 50% ට වඩා අඩු විය. දිගටම කරගෙන යාමට පෙර ඔබ Dojo හි ඔබේ ඉව නැවත ක්‍රමාංකනය කළ යුතුය.",
-    "dojoLockedMsg": "අගුලු දමා ඇත: ආපසු යාමට අඛණ්ඩව 3 වතාවක් නිවැරදි වන්න.",
-    "dojoUnlockedMsg": "ක්‍රමාංකනය සම්පූර්ණයි. ඔබට ආපසු යා හැක.",
-
-    // Reset Phase
-    "resetTitle": "මනස පිරිසිදු කිරීම",
-    "resetDesc": "පෙර මතකයන් ඉවත් කිරීම...",
-    "resetAction": "පිරිසිදු කර අරඹන්න",
-    "resetComplete": "මතකය පිරිසිදුයි",
-    "resetInstruction": "පෙර ඉලක්කය මැකී ගොස් අඳුරට වැටෙන ආකාරය මවාගන්න. විසන්ධි වන්න.",
-
-    // Steps
-    "stepFocus": "අවධානය",
-    "stepImpressions": "හැඟීම්",
-    "stepSketch": "සිතුවම",
-    "stepReview": "පරිශීලනය",
-
-    // Step 1: Focus
-    "trn": "ඉලක්ක යොමු අංකය",
-    "focusTitle": "ඉලක්ක යොමු අංකය (TRN)",
-    "focusDesc": "සන්සුන් වන්න. අපේක්ෂාවන්ගෙන් මනස නිදහස් කරන්න. ඛණ්ඩාංකය කෙරෙහි පමණක් අවධානය යොමු කරන්න.",
-    "focusTip": "ඇල්ෆා මට්ටමට ළඟා වීම සඳහා හුස්ම ගැනීමේ අභ්‍යාසය ආරම්භ කිරීමට පහත බොත්තම ක්ලික් කරන්න.",
-    "startFocusSeq": "හුස්ම ගැනීමේ අභ්‍යාසය අරඹන්න",
-    "stopFocusSeq": "මම සූදානම්",
-    "breatheIn": "හුස්ම ගන්න...",
-    "breatheOut": "හුස්ම පිටකරන්න...",
-    "breatheHold": "රඳවා ගන්න...",
-    "btnFocused": "මම අවධානය යොමු කළා",
-    "audioFocus": "ද්විමය අවධානය",
-    "audioMute": "ශබ්දය නිහඬ කරන්න",
-
-    // Step 2: Impressions
-    "stage1Title": "අදියර 1: සංවේදක දත්ත",
-    "stage1Desc": "පළමු සංවේදක හැඟීම් ලියන්න (Gestalts). වර්ණ, හැඩතල, සුවඳ, උෂ්ණත්වය.",
-    "placeholderNotes": "උදා: රතු, රළු මතුපිට, ලෝහමය සුවඳ, චලනය...",
-    "btnNextVisuals": "ඊළඟ: දෘශ්‍ය රූප",
-    "btnBack": "ආපසු",
-    "helperBtn": "වචන සහායක",
-    "helperClose": "සහායක වසන්න",
-    "helperTip": "ඔබේ සටහන් වලට එකතු කිරීමට වචන මත ක්ලික් කරන්න",
-
-    // Step 3: Sketch
-    "stage2Title": "අදියර 2: දෘශ්‍ය සිතුවම",
-    "stage2Desc": "හැඩතල සහ රූප අඳින්න. වස්තුව කුමක්දැයි හඳුනා ගැනීමට උත්සාහ නොකරන්න.",
-    "sketchReviewBtn": "සැසිය පරීක්ෂා කරන්න",
-    "sketchInstruction": "ඔබේ හැඟීම් සටහන් කිරීමට මවුසය හෝ ඇඟිල්ල භාවිතා කරන්න.",
-    "clearCanvas": "සියල්ල මකන්න",
-
-    // Step 4: Review
-    "reviewTitle": "අවසාන පරීක්ෂාව",
-    "reviewDesc": "AI විනිසුරු වෙත ඉදිරිපත් කිරීමට පෙර ඔබේ දත්ත පරීක්ෂා කරන්න.",
-    "reviewSubmit": "විශ්ලේෂණය සඳහා ඉදිරිපත් කරන්න",
-    "sensoryNotes": "සංවේදක සටහන්",
-    "noNotes": "සටහන් කර නැත.",
-    "sketchPreview": "සිතුවම් පෙරදසුන",
-    "noSketch": "සිතුවමක් නැත",
-    "editData": "දත්ත වෙනස් කරන්න",
-    "submitAnalysis": "විශ්ලේෂණය සඳහා ඉදිරිපත් කරන්න",
-    "saveLog": "ලොගයට සුරකින්න (AI නැත)",
-
-    // Analyzing
-    "analyzingTitle": "සැසිය විශ්ලේෂණය කරමින්...",
-    "analyzingDesc": "ඔබේ සිතුවම අන්ධ ඉලක්කය සමඟ සසඳමින්.",
-    "savingDesc": "ඔබගේ සැසි දත්ත සංකේතනය කර සුරකිමින්...",
-    "analysisFailed": "විශ්ලේෂණය අසාර්ථක විය",
-    "analysisErrorDesc": "AI හට විශ්ලේෂණය සම්පූර්ණ කිරීමට නොහැකි විය. කරුණාකර ඔබගේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
-    "tryAgain": "නැවත උත්සාහ කරන්න",
-    "returnToReview": "නැවත පරීක්ෂා කිරීමට",
-
-    // Feedback
-    "feedbackPhase": "ප්‍රතිපෝෂණ අදියර",
-    "accuracyScore": "නිරවද්‍යතා ලකුණු",
-    "nextSession": "ඊළඟ සැසිය",
-    "actualTarget": "සැබෑ ඉලක්කය",
-    "targetInaccessible": "ඉලක්කය ප්‍රවේශ විය නොහැක",
-    "targetInaccessibleDesc": "මෙය විවෘත සැසියකි. දෘශ්‍ය ප්‍රතිපෝෂණ ලබා ගත නොහැක.",
-    "targetIntent": "ඉලක්ක අරමුණ",
-    "yourSketch": "ඔබේ සිතුවම",
-    "aiAnalysis": "AI විශ්ලේෂණය",
-    "noAnalysis": "මෙම සැසි වර්ගය සඳහා AI විශ්ලේෂණයක් සිදු නොකෙරේ.",
-    "trendTitle": "කාර්ය සාධන ප්‍රවණතාවය",
-    "accuracyTrend": "නිරවද්‍යතා ප්‍රවණතාවය",
-    "duration": "කාලය",
-    "min": "විනාඩි",
-    "sec": "තත්",
-    "visualTools": "දෘශ්‍ය විශ්ලේෂණ මෙවලම්",
-    "modeSplit": "පසෙකින්",
-    "modeOverlay": "උඩින් තබා",
-    "opacity": "විනිවිදභාවය",
-    "invertSketch": "වර්ණ පෙරලන්න",
-    "addRemarks": "පසු සැසි සටහන් එක් කරන්න (විකල්ප)",
-    "addRemarksDesc": "මෙම ප්‍රතිඵලය ගැන ඕනෑම ගැටලුවක්, පැහැදිලි කිරීමක් හෝ අදහසක් විස්තර කරන්න.",
-    "saveRemarks": "සුරකින්න සහ සමාලෝචනය කරන්න",
-    "savingReview": "සුරැකීම සහ නැවත ගණනය කිරීම...",
-    "remarksSaved": "යාවත්කාලීනයි!",
-
-    // Open Analysis
-    "btnAnalyzeOpen": "AI විශ්ලේෂකයා අමතන්න",
-    "btnAnalyzeOpenDesc": "ඔබේ සිතුවම මත පදනම්ව ඔබ දුටුවේ කුමක්දැයි අනුමාන කිරීමට AIගෙන් විමසන්න.",
-    "aiPrediction": "AI අනාවැකිය",
-    "analystReport": "විශ්ලේෂක වාර්තාව",
-    "analyzingOpen": "දත්ත අර්ථකථනය කරමින්...",
-    "visualRecon": "දෘශ්‍ය ප්‍රතිනිර්මාණය",
-    "generateImage": "දර්ශනයක් ජනනය කරන්න",
-    "generatingImage": "අඳිමින්...",
-    "generateImageDesc": "ඔබගේ අරමුණ + සිතුවම මත පදනම්ව ඔබ දුටු දේ ඇඳීමට AI වෙත ඉල්ලන්න.",
-    "aiVisualDesc": "මෙය ඔබගේ දත්ත මත පදනම්ව AI විසින් ජනනය කරන ලද ඔබේ ඉලක්කයේ දෘශ්‍යකරණයකි.",
-
-    // Auth Modal
-    "welcomeBackAuth": "නැවත සාදරයෙන් පිළිගනිමු",
-    "createAccount": "ගිණුමක් සාදන්න",
-    "displayName": "පෙන්වන නම",
-    "yourName": "ඔබේ නම",
-    "emailAddress": "විද්‍යුත් තැපැල් ලිපිනය",
-    "password": "මුරපදය",
-    "btnSignIn": "ඇතුල් වන්න",
-    "btnSignUp": "ලියාපදිංචි වන්න",
-    "haveAccount": "දැනටමත් ගිණුමක් තිබේද?",
-    "noAccount": "ගිණුමක් නොමැතිද?",
-    "authFailed": "සත්‍යාපනය අසාර්ථක විය.",
-
-    // AI Coach
-    "coachReport": "AI උපදේශක වාර්තාව",
-    "strengths": "ශක්තීන්",
-    "weaknesses": "දුර්වලතා",
-    "tip": "උපදෙස්",
-
-    // Navigation
-    "confirmExit": "ඔබට පිටවීමට අවශ්‍ය බව විශ්වාසද? වත්මන් සැසි දත්ත නැති වනු ඇත.",
-    "exitSession": "සැසියෙන් ඉවත් වන්න",
+    "backToList": "Back to List"
   }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    // Initialize language from LocalStorage if available
-    const saved = localStorage.getItem('appLanguage');
-    return (saved === 'en' || saved === 'si') ? saved : 'en';
-  });
+  // Always default to English
+  const [language, setLanguageState] = useState<Language>('en');
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem('appLanguage', lang);
+    // No-op: enforcing English
+    setLanguageState('en');
   };
 
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations['en']] || key;
+    return translations['en'][key as keyof typeof translations['en']] || key;
   };
 
   return (

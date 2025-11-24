@@ -49,9 +49,7 @@ export const analyzeSession = async (
     text: `These are the VIEWER'S NOTES describing their impressions: "${userNotes}"`
   });
 
-  const langInstruction = language === 'si' 
-    ? "Respond in Sinhala language (use Sinhala script)." 
-    : "Respond in English.";
+  const langInstruction = "Respond in English.";
 
   // Add Instructions
   parts.push({
@@ -134,9 +132,7 @@ export const recalculateScore = async (
     parts.push({ text: "USER SKETCH" });
   }
 
-  const langInstruction = language === 'si' 
-    ? "Respond in Sinhala language (use Sinhala script)." 
-    : "Respond in English.";
+  const langInstruction = "Respond in English.";
 
   parts.push({
     text: `
@@ -216,9 +212,7 @@ export const analyzeOpenSession = async (
     text: `VIEWER'S SENSORY NOTES: "${userNotes}"`
   });
 
-  const langInstruction = language === 'si' 
-    ? "Respond in Sinhala language (use Sinhala script)." 
-    : "Respond in English.";
+  const langInstruction = "Respond in English.";
 
   parts.push({
     text: `
@@ -271,7 +265,8 @@ export const analyzeOpenSession = async (
 export const generateVisualReconstruction = async (
   intent: string | undefined,
   aiGuess: string | undefined,
-  userNotes: string
+  userNotes: string,
+  additionalDetails?: string
 ): Promise<string> => {
   if (!process.env.API_KEY) throw new Error("API Key is missing");
 
@@ -282,6 +277,7 @@ export const generateVisualReconstruction = async (
     Create a hyper-realistic visualization of: "${intent || 'A mystery object'}".
     It should look like: "${aiGuess || 'An undefined form'}".
     It must include these sensory details: ${userNotes}.
+    ${additionalDetails ? `Additional User Guidance: ${additionalDetails}` : ''}
     High quality, clear lighting, detailed.
   `;
 
@@ -387,9 +383,7 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  const langInstruction = language === 'si' 
-    ? "Respond in Sinhala language (use Sinhala script)." 
-    : "Respond in English.";
+  const langInstruction = "Respond in English.";
 
   const prompt = `
     You are a Remote Viewing Instructor. Analyze the following training history for a student.
@@ -453,9 +447,7 @@ export const createCoachChat = (history: SessionData[], language: 'en' | 'si' = 
     Feedback: "${s.aiFeedback}"
   `).join('\n');
 
-  const langInstruction = language === 'si' 
-    ? "Respond in Sinhala language. Use Sinhala script." 
-    : "Respond in English.";
+  const langInstruction = "Respond in English.";
 
   const systemInstruction = `
     You are a professional Remote Viewing (RV) Instructor. 
