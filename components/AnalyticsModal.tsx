@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { X, TrendingUp, Trophy, Clock, Activity, Target, Zap, ArrowRightCircle, Award, Lightbulb, Map, Lock, Check, Circle } from 'lucide-react';
+import { X, TrendingUp, Trophy, Clock, Activity, Target, Zap, ArrowRightCircle, Award, Lightbulb, Map, Lock, Check, Circle, Sprout, Feather, BookOpen, Radio, ShieldCheck, Eye, Crown, User } from 'lucide-react';
 import { SessionData, CoachReport } from '../types';
 import HistoryChart from './HistoryChart';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getRankStyle } from '../App';
 
 interface AnalyticsModalProps {
   isOpen: boolean;
@@ -42,6 +43,8 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
 
   const currentLevel = calculateLevel(avgScore);
   const capabilityKey = `cap_lvl${currentLevel}`;
+  const rankStyle = getRankStyle(currentLevel);
+  const RankIcon = rankStyle.icon;
 
   // Helper for Level Ranges display
   const getLevelRange = (lvl: number) => {
@@ -109,20 +112,20 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
              </h3>
              <p className="text-slate-400 text-sm">{t('currentCapabilitiesDesc')}</p>
 
-             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 rounded-2xl relative overflow-hidden group shadow-lg">
+             <div className={`bg-gradient-to-br ${rankStyle.gradient} border ${rankStyle.border} p-8 rounded-2xl relative overflow-hidden group shadow-lg`}>
                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Lightbulb size={120} />
+                    <RankIcon size={120} />
                  </div>
                  
                  <div className="relative z-10 flex flex-col md:flex-row items-start gap-6">
-                    <div className="bg-yellow-500/20 rounded-full p-4 border border-yellow-500/30">
-                        <Award size={32} className="text-yellow-500" />
+                    <div className={`${rankStyle.bg} rounded-full p-4 border ${rankStyle.border}`}>
+                        <RankIcon size={32} className={rankStyle.color} />
                     </div>
                     <div>
-                        <h4 className="text-lg font-bold text-yellow-500 mb-2 uppercase tracking-wide">
+                        <h4 className={`text-lg font-bold ${rankStyle.color} mb-2 uppercase tracking-wide`}>
                           {t(`lvl${currentLevel}`)}
                         </h4>
-                        <p className="text-lg text-slate-200 leading-relaxed">
+                        <p className={`text-lg ${rankStyle.text} leading-relaxed opacity-90`}>
                           "{t(capabilityKey)}"
                         </p>
                     </div>
@@ -143,31 +146,36 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
                  const isPassed = level < currentLevel;
                  const isCurrent = level === currentLevel;
                  const isFuture = level > currentLevel;
+                 const lvlStyle = getRankStyle(level);
+                 const LvlIcon = lvlStyle.icon;
 
                  return (
                    <div key={level} className={`relative transition-all duration-300 ${isCurrent ? 'scale-105' : 'opacity-80'}`}>
                      {/* Node Indicator */}
                      <div className={`absolute -left-[41px] top-1 w-6 h-6 rounded-full border-4 flex items-center justify-center
                        ${isPassed ? 'bg-green-500 border-green-500 text-slate-900' : ''}
-                       ${isCurrent ? 'bg-slate-900 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : ''}
+                       ${isCurrent ? `bg-slate-900 border-current ${lvlStyle.text} ${lvlStyle.shadow}` : ''}
                        ${isFuture ? 'bg-slate-900 border-slate-700' : ''}
                      `}>
                        {isPassed && <Check size={12} strokeWidth={4} />}
-                       {isCurrent && <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />}
+                       {isCurrent && <div className={`w-2 h-2 ${lvlStyle.bg.replace('/10','')} rounded-full animate-pulse`} />}
                        {isFuture && <Lock size={10} className="text-slate-600" />}
                      </div>
 
                      {/* Content */}
                      <div className={`p-4 rounded-xl border transition-colors 
-                       ${isCurrent ? 'bg-blue-900/10 border-blue-500/50' : 'bg-slate-800/30 border-slate-800'}
+                       ${isCurrent ? `${lvlStyle.bg} ${lvlStyle.border}` : 'bg-slate-800/30 border-slate-800'}
                        ${isFuture ? 'opacity-50' : 'opacity-100'}
                      `}>
                        <div className="flex justify-between items-center mb-1">
-                         <h4 className={`text-sm font-bold uppercase tracking-wide 
-                           ${isPassed ? 'text-green-500' : isCurrent ? 'text-blue-400' : 'text-slate-500'}
-                         `}>
-                           {t('level')} {level}: {t(`lvl${level}`)}
-                         </h4>
+                         <div className="flex items-center gap-2">
+                             <LvlIcon size={16} className={isPassed || isCurrent ? lvlStyle.color : 'text-slate-500'} />
+                             <h4 className={`text-sm font-bold uppercase tracking-wide 
+                               ${isPassed ? 'text-green-500' : isCurrent ? lvlStyle.color : 'text-slate-500'}
+                             `}>
+                               {t('level')} {level}: {t(`lvl${level}`)}
+                             </h4>
+                         </div>
                          <span className="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded">
                            {getLevelRange(level)}
                          </span>

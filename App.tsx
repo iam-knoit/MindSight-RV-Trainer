@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown, Sprout, Feather, Radio, Activity } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData } from './services/firebase';
@@ -16,6 +16,22 @@ const generateCoordinate = () => {
   const p1 = Math.floor(1000 + Math.random() * 9000);
   const p2 = Math.floor(1000 + Math.random() * 9000);
   return `${p1}-${p2}`;
+};
+
+// --- HELPER: RANK STYLES ---
+export const getRankStyle = (level: number) => {
+  switch(level) {
+    case 1: return { icon: Sprout, color: 'text-slate-400', text: 'text-slate-200', border: 'border-slate-500/30', bg: 'bg-slate-500/10', gradient: 'from-slate-800 to-slate-900', shadow: 'shadow-slate-900/50' };
+    case 2: return { icon: Feather, color: 'text-zinc-400', text: 'text-zinc-200', border: 'border-zinc-500/30', bg: 'bg-zinc-500/10', gradient: 'from-zinc-800 to-zinc-900', shadow: 'shadow-zinc-900/50' };
+    case 3: return { icon: BookOpen, color: 'text-sky-400', text: 'text-sky-200', border: 'border-sky-500/30', bg: 'bg-sky-500/10', gradient: 'from-sky-900 to-slate-900', shadow: 'shadow-sky-900/50' };
+    case 4: return { icon: Eye, color: 'text-cyan-400', text: 'text-cyan-200', border: 'border-cyan-500/30', bg: 'bg-cyan-500/10', gradient: 'from-cyan-900 to-slate-900', shadow: 'shadow-cyan-900/50' };
+    case 5: return { icon: Activity, color: 'text-teal-400', text: 'text-teal-200', border: 'border-teal-500/30', bg: 'bg-teal-500/10', gradient: 'from-teal-900 to-slate-900', shadow: 'shadow-teal-900/50' };
+    case 6: return { icon: Radio, color: 'text-green-400', text: 'text-green-200', border: 'border-green-500/30', bg: 'bg-green-500/10', gradient: 'from-green-900 to-slate-900', shadow: 'shadow-green-900/50' };
+    case 7: return { icon: ShieldCheck, color: 'text-amber-400', text: 'text-amber-200', border: 'border-amber-500/30', bg: 'bg-amber-500/10', gradient: 'from-amber-900 to-slate-900', shadow: 'shadow-amber-900/50' };
+    case 8: return { icon: Zap, color: 'text-orange-400', text: 'text-orange-200', border: 'border-orange-500/30', bg: 'bg-orange-500/10', gradient: 'from-orange-900 to-red-900', shadow: 'shadow-orange-900/50' };
+    case 9: return { icon: Crown, color: 'text-purple-400', text: 'text-purple-200', border: 'border-purple-500/50', bg: 'bg-purple-500/10', gradient: 'from-purple-900 to-fuchsia-900', shadow: 'shadow-purple-900/50' };
+    default: return { icon: UserIcon, color: 'text-slate-400', text: 'text-slate-200', border: 'border-slate-700', bg: 'bg-slate-800', gradient: 'from-slate-800 to-slate-900', shadow: 'shadow-slate-900' };
+  }
 };
 
 // --- SUB-COMPONENTS ---
@@ -670,13 +686,6 @@ function App() {
     let minScore = 0;
     let maxScore = 100;
 
-    // Logic for 9 Levels
-    // Level 1: 0-19 (No Div)
-    // Level 2: 20-29 (Div I, II, III)
-    // ...
-    // Level 8: 80-89 (Div I, II, III)
-    // Level 9: 90-100 (No Div)
-
     if (avgScore < 20) {
        level = 1; title = 'lvl1'; division = null; minScore = 0; maxScore = 20;
     } else if (avgScore >= 90) {
@@ -687,8 +696,8 @@ function App() {
        const levelKey = `lvl${level}`;
        title = levelKey;
        
-       const baseLevelScore = 20 + (level - 2) * 10; // e.g., Level 2 base is 20
-       const relativeScore = avgScore - baseLevelScore; // 0-9 within the level
+       const baseLevelScore = 20 + (level - 2) * 10;
+       const relativeScore = avgScore - baseLevelScore;
        
        if (relativeScore <= 3) division = 'I';
        else if (relativeScore <= 6) division = 'II';
@@ -698,7 +707,6 @@ function App() {
        maxScore = baseLevelScore + 10;
     }
 
-    // Calculate progress percentage within current rank/level for the progress bar
     const totalRange = maxScore - minScore;
     const currentProgress = avgScore - minScore;
     const progressPercent = Math.min(100, Math.max(0, (currentProgress / totalRange) * 100));
@@ -707,6 +715,8 @@ function App() {
   };
 
   const currentRank = calculateLevel(history);
+  const rankStyle = getRankStyle(currentRank.level);
+  const RankIcon = rankStyle.icon;
 
   // Auth State Observer
   useEffect(() => {
@@ -956,8 +966,8 @@ function App() {
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex flex-col items-end">
                  {/* Current Rank Badge (Small) */}
-                 <div className="flex items-center gap-1.5 bg-slate-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-yellow-500 border border-slate-700 mb-0.5">
-                    <Crown size={10} /> {t(currentRank.title)} {currentRank.division}
+                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-0.5 border ${rankStyle.bg} ${rankStyle.border} ${rankStyle.color}`}>
+                    <RankIcon size={10} /> {t(currentRank.title)} {currentRank.division}
                  </div>
                  <span className="text-sm font-semibold text-slate-200">{user.displayName || t('viewer')}</span>
               </div>
@@ -1082,30 +1092,30 @@ function App() {
 
           <div className="flex flex-col gap-6">
               {/* RANK CARD */}
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-6 flex flex-col shadow-xl">
+              <div className={`bg-gradient-to-br ${rankStyle.gradient} rounded-2xl border ${rankStyle.border} p-6 flex flex-col shadow-xl`}>
                  <div className="flex justify-between items-start mb-4">
                     <div>
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t('currentRank')}</h4>
+                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-1 ${rankStyle.text}`}>{t('currentRank')}</h4>
                         <div className="text-2xl font-bold text-white flex items-center gap-2">
-                            <Award className="text-yellow-500" />
-                            {t(currentRank.title)} <span className="text-slate-500 text-lg">{currentRank.division}</span>
+                            <RankIcon className={rankStyle.color} />
+                            {t(currentRank.title)} <span className="text-white/60 text-lg">{currentRank.division}</span>
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className={`text-xs mt-1 ${rankStyle.text} opacity-80`}>
                             {t('level')} {currentRank.level} • {t('avgScore')}: {currentRank.avgScore}%
                         </div>
                     </div>
-                    <Medal size={40} className="text-yellow-500/20" />
+                    <RankIcon size={40} className={`${rankStyle.text} opacity-20`} />
                  </div>
                  
                  {/* Progress Bar */}
                  <div className="mt-2">
-                    <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
+                    <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${rankStyle.text} opacity-70`}>
                         <span>{t('division')} {currentRank.division || 'I'}</span>
                         <span>{t('nextRank')}</span>
                     </div>
-                    <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-700/50">
+                    <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/10">
                         <div 
-                            className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-1000 ease-out"
+                            className={`h-full bg-white transition-all duration-1000 ease-out`}
                             style={{ width: `${currentRank.progress}%` }}
                         />
                     </div>
