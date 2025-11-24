@@ -28,6 +28,7 @@ export interface SessionData {
   aiScore?: number;
   aiFeedback?: string;
   aiGuessedSubject?: string; // The AI's guess in Open Mode
+  generatedImageUrl?: string; // AI reconstruction of the target
   
   durationSeconds?: number;
   postSessionRemarks?: string; 

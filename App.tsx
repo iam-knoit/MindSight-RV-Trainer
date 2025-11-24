@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Eye, LogIn, LogOut, User as UserIcon, AlertTriangle, XCircle, RefreshCw, Globe, CheckCircle2, Eraser, Brain, Sparkles, Image as ImageIcon, CheckCircle, Save, ArrowLeft, ArrowRight, Compass } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats, SessionType } from './types';
-import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore, analyzeOpenSession } from './services/geminiService';
-import { auth, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData } from './services/firebase';
+import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore, analyzeOpenSession, generateVisualReconstruction } from './services/geminiService';
+import { auth, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData, deleteSession } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import CoachChat from './components/CoachChat';
@@ -16,6 +16,7 @@ import { calculateLevel, getRankStyle } from './utils/leveling';
 import AuthModal from './components/modals/AuthModal';
 import ConfirmationModal from './components/modals/ConfirmationModal';
 import ModeSelectionModal from './components/modals/ModeSelectionModal';
+import SessionLogModal from './components/modals/SessionLogModal';
 import Step1Focus from './components/session/Step1Focus';
 import Step2Impressions from './components/session/Step2Impressions';
 import Step4Review from './components/session/Step4Review';
@@ -52,6 +53,7 @@ function App() {
   const [showExitConfirm, setShowExitConfirm] = useState(false); 
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false); 
   const [showModeSelection, setShowModeSelection] = useState(false);
+  const [showSessionLog, setShowSessionLog] = useState(false);
 
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
@@ -108,6 +110,16 @@ function App() {
     }
   }, [user]);
 
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!user) return;
+    try {
+        await deleteSession(user.uid, sessionId);
+    } catch (e) {
+        console.error("Delete failed", e);
+        alert("Failed to delete session");
+    }
+  };
+
   const runCoachAnalysis = async () => {
     if (history.length < 3) {
       alert(t('aiCoachUnlock'));
@@ -144,6 +156,23 @@ function App() {
           alert(t('analysisFailed'));
       } finally {
           setIsOpenAnalyzing(false);
+      }
+  };
+
+  const handleGenerateImage = async (session: SessionData) => {
+      if (!user) return;
+      try {
+          const imageUrl = await generateVisualReconstruction(
+              session.targetIntent, 
+              session.aiGuessedSubject, 
+              session.userNotes
+          );
+          
+          await updateSessionData(user.uid, session.id, { generatedImageUrl: imageUrl });
+          setCurrentSession(prev => prev ? { ...prev, generatedImageUrl: imageUrl } : null);
+      } catch (e) {
+          console.error("Image generation failed", e);
+          alert("Failed to generate visualization. Try again later.");
       }
   };
 
@@ -527,6 +556,7 @@ function App() {
       <ModeSelectionModal isOpen={showModeSelection} onClose={() => setShowModeSelection(false)} onSelectTraining={() => handleStartSession('TRAINING')} onSelectOpen={(intent) => handleStartSession('OPEN', intent)} />
       <ConfirmationModal isOpen={showExitConfirm} title="Exit Session?" message={t('confirmExit')} onConfirm={confirmExitSession} onCancel={() => setShowExitConfirm(false)} />
       <AnalyticsModal isOpen={showAnalyticsModal} onClose={() => setShowAnalyticsModal(false)} history={history} coachReport={coachReport} />
+      <SessionLogModal isOpen={showSessionLog} onClose={() => setShowSessionLog(false)} history={history} onDeleteSession={handleDeleteSession} />
       
       {user && <CoachChat isOpen={showChat} onClose={() => setShowChat(false)} history={history} />}
 
@@ -538,6 +568,7 @@ function App() {
             user={user} history={history} coachReport={coachReport} isLoading={isLoading} loadingMessage={loadingMessage} analyzingHistory={analyzingHistory}
             onShowAuth={() => setShowAuthModal(true)} onShowModeSelection={() => setShowModeSelection(true)} onShowAnalytics={() => setShowAnalyticsModal(true)}
             onShowChat={() => setShowChat(true)} onRunCoachAnalysis={runCoachAnalysis} onEnterDojo={() => { setIsDojoLocked(false); setState(SessionState.DOJO); }}
+            onShowSessionLog={() => setShowSessionLog(true)}
           />
         )}
         {state === SessionState.DOJO && (
@@ -553,6 +584,7 @@ function App() {
              onCalibrationRequired={() => { sessionRef.current = false; setIsDojoLocked(true); setState(SessionState.DOJO); }}
              onSaveRemarks={handleSaveRemarks}
              onOpenAnalysis={handleOpenAnalysis}
+             onGenerateImage={handleGenerateImage}
              isOpenAnalyzing={isOpenAnalyzing}
            />
         )}

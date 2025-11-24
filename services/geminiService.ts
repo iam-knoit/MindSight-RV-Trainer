@@ -268,6 +268,45 @@ export const analyzeOpenSession = async (
   }
 };
 
+export const generateVisualReconstruction = async (
+  intent: string | undefined,
+  aiGuess: string | undefined,
+  userNotes: string
+): Promise<string> => {
+  if (!process.env.API_KEY) throw new Error("API Key is missing");
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  // Construct a prompt for image generation
+  const prompt = `
+    Create a hyper-realistic visualization of: "${intent || 'A mystery object'}".
+    It should look like: "${aiGuess || 'An undefined form'}".
+    It must include these sensory details: ${userNotes}.
+    High quality, clear lighting, detailed.
+  `;
+
+  try {
+    // According to system instructions, use generateContent with gemini-2.5-flash-image for image generation
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [{ text: prompt }]
+      }
+    });
+
+    // Extract image from response
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+    }
+    throw new Error("No image data found in response");
+  } catch (error) {
+    console.error("Visual Reconstruction failed:", error);
+    throw error;
+  }
+};
+
 export const generateTargetImage = async (): Promise<{ url: string; base64: string; description: string }> => {
   if (!process.env.API_KEY) {
     throw new Error("API Key is missing");

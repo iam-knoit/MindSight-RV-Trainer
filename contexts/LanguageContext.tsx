@@ -43,6 +43,10 @@ const translations = {
     "totalTime": "Total Training Time",
     "viewAnalytics": "View Full Analytics",
     "intuitionDojo": "Intuition Dojo",
+    "sessionLog": "Session Log",
+    "logTitle": "Full Session Log",
+    "deleteSession": "Delete",
+    "confirmDelete": "Delete this session permanently?",
 
     // Session Modes
     "selectMode": "Select Session Mode",
@@ -219,6 +223,11 @@ const translations = {
     "aiPrediction": "AI PREDICTION",
     "analystReport": "Analyst Report",
     "analyzingOpen": "Interpreting Data...",
+    "visualRecon": "Visual Reconstruction",
+    "generateImage": "Generate Visualization",
+    "generatingImage": "Painting...",
+    "generateImageDesc": "Ask AI to draw what it thinks you saw based on your intent + sketch.",
+    "aiVisualDesc": "This is an AI-generated visualization of your target based on your data.",
 
     // Auth Modal
     "welcomeBackAuth": "Welcome Back",
@@ -273,6 +282,10 @@ const translations = {
     "totalTime": "මුළු පුහුණු කාලය",
     "viewAnalytics": "සම්පූර්ණ විශ්ලේෂණය බලන්න",
     "intuitionDojo": "ඉව පුහුණු අංගනය (Dojo)",
+    "sessionLog": "සැසි සටහන",
+    "logTitle": "සම්පූර්ණ සැසි ලොගය",
+    "deleteSession": "මකන්න",
+    "confirmDelete": "මෙම සැසිය ස්ථිරවම මකන්නද?",
 
     // Session Modes
     "selectMode": "සැසි මාදිලිය තෝරන්න",
@@ -449,6 +462,11 @@ const translations = {
     "aiPrediction": "AI අනාවැකිය",
     "analystReport": "විශ්ලේෂක වාර්තාව",
     "analyzingOpen": "දත්ත අර්ථකථනය කරමින්...",
+    "visualRecon": "දෘශ්‍ය ප්‍රතිනිර්මාණය",
+    "generateImage": "දර්ශනයක් ජනනය කරන්න",
+    "generatingImage": "අඳිමින්...",
+    "generateImageDesc": "ඔබගේ අරමුණ + සිතුවම මත පදනම්ව ඔබ දුටු දේ ඇඳීමට AI වෙත ඉල්ලන්න.",
+    "aiVisualDesc": "මෙය ඔබගේ දත්ත මත පදනම්ව AI විසින් ජනනය කරන ලද ඔබේ ඉලක්කයේ දෘශ්‍යකරණයකි.",
 
     // Auth Modal
     "welcomeBackAuth": "නැවත සාදරයෙන් පිළිගනිමු",

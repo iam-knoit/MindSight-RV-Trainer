@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CheckCircle, Timer, AlertTriangle, Layers, Sliders, Contrast, Lock, FileText, RefreshCw, Check, Save, Sparkles, Wand2, Eye } from 'lucide-react';
+import { CheckCircle, Timer, AlertTriangle, Layers, Sliders, Contrast, Lock, FileText, RefreshCw, Check, Save, Sparkles, Wand2, Eye, ImagePlus, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SessionData } from '../../types';
 import HistoryChart from '../HistoryChart';
@@ -12,24 +12,37 @@ interface FeedbackViewProps {
   onCalibrationRequired: () => void;
   onSaveRemarks: (remarks: string) => Promise<void>;
   onOpenAnalysis?: (session: SessionData) => Promise<void>;
+  onGenerateImage?: (session: SessionData) => Promise<void>;
   isSavingRemarks: boolean;
   remarksSaved: boolean;
   isOpenAnalyzing?: boolean;
 }
 
 const FeedbackView: React.FC<FeedbackViewProps> = ({ 
-  currentSession, history, onNextSession, onCalibrationRequired, onSaveRemarks, onOpenAnalysis, isSavingRemarks, remarksSaved, isOpenAnalyzing = false
+  currentSession, history, onNextSession, onCalibrationRequired, onSaveRemarks, onOpenAnalysis, onGenerateImage, isSavingRemarks, remarksSaved, isOpenAnalyzing = false
 }) => {
   const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<'split' | 'overlay'>('split');
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [invertSketch, setInvertSketch] = useState(false);
   const [remarksInput, setRemarksInput] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   if (!currentSession) return null;
 
   const isLowScore = currentSession.aiScore !== undefined && currentSession.aiScore < 50;
   const isOpenSession = currentSession.sessionType === 'OPEN';
+
+  const handleGenerateImage = async () => {
+    if (onGenerateImage) {
+        setIsGeneratingImage(true);
+        try {
+            await onGenerateImage(currentSession);
+        } finally {
+            setIsGeneratingImage(false);
+        }
+    }
+  };
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return '0s';
@@ -145,13 +158,42 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
       {viewMode === 'split' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="space-y-2">
-            <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
-              {isOpenSession ? t('targetInaccessible') : t('actualTarget')}
+            <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold flex justify-center items-center gap-2">
+               {isOpenSession && currentSession.generatedImageUrl ? (
+                   <><Wand2 size={16} className="text-purple-400" /> {t('visualRecon')}</>
+               ) : (
+                   isOpenSession ? t('targetInaccessible') : t('actualTarget')
+               )}
             </div>
             <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3] bg-slate-900 flex items-center justify-center flex-col">
-              {isOpenSession || !currentSession.targetImageUrl ? (
-                  <div className="text-center p-6 w-full">
-                      <Lock size={48} className="text-slate-600 mx-auto mb-4" />
+              
+              {/* DISPLAY LOGIC: 
+                 1. If Training Mode -> Show Target Image
+                 2. If Open Mode AND Generated Image -> Show Generated Image
+                 3. If Open Mode AND No Image -> Show Placeholder/Generators 
+              */}
+              
+              {!isOpenSession && currentSession.targetImageUrl ? (
+                   <img 
+                    src={currentSession.targetImageUrl} 
+                    alt="Target" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                   />
+              ) : isOpenSession && currentSession.generatedImageUrl ? (
+                   <div className="relative w-full h-full">
+                       <img 
+                        src={currentSession.generatedImageUrl} 
+                        alt="AI Generated Target" 
+                        className="w-full h-full object-cover"
+                       />
+                       <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-sm p-2 text-xs text-center text-purple-200">
+                           {t('aiVisualDesc')}
+                       </div>
+                   </div>
+              ) : (
+                  // PLACEHOLDER FOR OPEN SESSION WITHOUT IMAGE
+                  <div className="text-center p-6 w-full h-full overflow-y-auto custom-scrollbar">
+                      <Lock size={48} className="text-slate-600 mx-auto mb-4 mt-8" />
                       <p className="text-slate-400 font-bold">{t('targetInaccessible')}</p>
                       <p className="text-slate-500 text-sm mt-2 mb-4">{t('targetInaccessibleDesc')}</p>
                       {currentSession.targetIntent && (
@@ -180,7 +222,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
 
                       {/* AI Open Analysis Result */}
                       {isOpenSession && currentSession.aiGuessedSubject && (
-                        <div className="mt-6 bg-slate-800/80 rounded-xl border border-blue-500/30 p-4 text-left relative overflow-hidden">
+                        <div className="mt-6 bg-slate-800/80 rounded-xl border border-blue-500/30 p-4 text-left relative overflow-hidden max-w-md mx-auto">
                             <div className="absolute top-0 right-0 p-2 opacity-10">
                                 <Eye size={64} />
                             </div>
@@ -194,16 +236,22 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
                                 <span className="text-xs text-slate-500 uppercase font-bold mr-2">{t('analystReport')}:</span>
                                 {currentSession.aiFeedback}
                             </div>
+
+                            {/* GENERATE VISUALIZATION BUTTON */}
+                            {!currentSession.generatedImageUrl && onGenerateImage && (
+                                <button
+                                    onClick={handleGenerateImage}
+                                    disabled={isGeneratingImage}
+                                    className="w-full mt-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                >
+                                    {isGeneratingImage ? <Loader2 className="animate-spin" size={14} /> : <ImagePlus size={14} />}
+                                    {isGeneratingImage ? t('generatingImage') : t('generateImage')}
+                                </button>
+                            )}
                         </div>
                       )}
 
                   </div>
-              ) : (
-                  <img 
-                  src={currentSession.targetImageUrl} 
-                  alt="Target" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
               )}
             </div>
           </div>

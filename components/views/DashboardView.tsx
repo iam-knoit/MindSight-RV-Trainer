@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb } from 'lucide-react';
+import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SessionData, CoachReport } from '../../types';
 import HistoryChart from '../HistoryChart';
@@ -19,11 +20,12 @@ interface DashboardViewProps {
   onShowChat: () => void;
   onRunCoachAnalysis: () => void;
   onEnterDojo: () => void;
+  onShowSessionLog: () => void;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
   user, history, coachReport, isLoading, loadingMessage, analyzingHistory,
-  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo
+  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onShowSessionLog
 }) => {
   const { t } = useLanguage();
   const totalSeconds = history.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
@@ -99,11 +101,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       {user && history.length > 0 && (
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-1000 delay-200">
           <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative flex flex-col">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
               <h3 className="text-lg font-semibold text-slate-300 flex items-center gap-2">
                 <History size={18} /> {t('historyTitle')}
               </h3>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                 <button 
+                    onClick={onShowSessionLog}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 transition-all flex items-center gap-2"
+                 >
+                    <FileClock size={12} />
+                    {t('sessionLog')}
+                 </button>
                  <button 
                     onClick={onShowAnalytics}
                     className="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-full border border-slate-700 transition-all flex items-center gap-2"

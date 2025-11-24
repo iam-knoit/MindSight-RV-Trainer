@@ -1,3 +1,4 @@
+
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -20,7 +21,8 @@ import {
   doc,
   setDoc,
   getDoc,
-  updateDoc
+  updateDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { SessionData, IntuitionStats } from '../types';
 
@@ -92,6 +94,16 @@ export const saveSessionToCloud = async (userId: string, session: SessionData) =
     });
   } catch (error) {
     console.error("Error saving session to cloud", error);
+    throw error;
+  }
+};
+
+export const deleteSession = async (userId: string, sessionId: string) => {
+  try {
+    const sessionRef = doc(db, 'users', userId, 'sessions', sessionId);
+    await deleteDoc(sessionRef);
+  } catch (error) {
+    console.error("Error deleting session", error);
     throw error;
   }
 };
