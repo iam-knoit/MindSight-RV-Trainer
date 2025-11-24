@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown, Sprout, Feather, Radio, Activity, Eraser } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown, Sprout, Feather, Radio, Activity, Eraser, CheckCircle2 } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData } from './services/firebase';
