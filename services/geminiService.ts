@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Chat } from "@google/genai";
-import { ScoringResult, SessionData, CoachReport } from '../types';
+import { ScoringResult, SessionData, CoachReport, OpenAnalysisResult } from '../types';
 
 const cleanBase64 = (data: string) => {
     // Remove data:image/xyz;base64, prefix if present
@@ -119,7 +119,7 @@ export const recalculateScore = async (
   parts.push({
     inlineData: {
       mimeType: "image/jpeg",
-      data: cleanBase64(session.targetImageBase64),
+      data: cleanBase64(session.targetImageBase64!),
     },
   });
   parts.push({ text: "TARGET IMAGE" });
@@ -188,6 +188,82 @@ export const recalculateScore = async (
     }
   } catch (error) {
     console.error("Recalculation failed:", error);
+    throw error;
+  }
+};
+
+export const analyzeOpenSession = async (
+  userSketchBase64: string | null,
+  userNotes: string,
+  language: 'en' | 'si' = 'en'
+): Promise<OpenAnalysisResult> => {
+  if (!process.env.API_KEY) throw new Error("API Key is missing");
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const parts: any[] = [];
+
+  if (userSketchBase64) {
+    parts.push({
+      inlineData: {
+        mimeType: "image/png",
+        data: cleanBase64(userSketchBase64),
+      },
+    });
+    parts.push({ text: "VIEWER'S SKETCH" });
+  }
+
+  parts.push({ 
+    text: `VIEWER'S SENSORY NOTES: "${userNotes}"`
+  });
+
+  const langInstruction = language === 'si' 
+    ? "Respond in Sinhala language (use Sinhala script)." 
+    : "Respond in English.";
+
+  parts.push({
+    text: `
+      You are a Remote Viewing Analyst known as "The Monitor".
+      The viewer has just completed a blind session. You do NOT know what the target is.
+      
+      Your task:
+      Analyze the sketch and the notes provided. Based purely on this data, construct a profile of what the viewer perceived.
+      
+      1. Synthesize the visual forms from the sketch.
+      2. Synthesize the sensory adjectives from the notes.
+      3. Make an educated PREDICTION (Guess) of what the subject matter is.
+      
+      ${langInstruction}
+      
+      Respond in JSON:
+      - subject: A short title (3-5 words) of what you think they saw (e.g., "A tall man-made tower" or "A flowing body of water").
+      - analysis: A paragraph explaining why you think so based on their specific lines, shapes, and words.
+    `
+  });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: { parts },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            subject: { type: Type.STRING },
+            analysis: { type: Type.STRING }
+          },
+          required: ["subject", "analysis"]
+        }
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as OpenAnalysisResult;
+    } else {
+      throw new Error("Empty response from AI Analyst");
+    }
+  } catch (error) {
+    console.error("Open Analysis failed:", error);
     throw error;
   }
 };

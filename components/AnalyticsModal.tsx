@@ -4,7 +4,7 @@ import { X, TrendingUp, Trophy, Clock, Activity, Target, Zap, ArrowRightCircle, 
 import { SessionData, CoachReport } from '../types';
 import HistoryChart from './HistoryChart';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getRankStyle } from '../App';
+import { getRankStyle } from '../utils/leveling';
 
 interface AnalyticsModalProps {
   isOpen: boolean;

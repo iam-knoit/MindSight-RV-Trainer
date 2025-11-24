@@ -27,6 +27,7 @@ export interface SessionData {
   // AI Data is optional for OPEN sessions
   aiScore?: number;
   aiFeedback?: string;
+  aiGuessedSubject?: string; // The AI's guess in Open Mode
   
   durationSeconds?: number;
   postSessionRemarks?: string; 
@@ -47,6 +48,11 @@ export interface TargetImage {
 export interface ScoringResult {
   score: number;
   feedback: string;
+}
+
+export interface OpenAnalysisResult {
+  subject: string;
+  analysis: string;
 }
 
 export interface CoachReport {

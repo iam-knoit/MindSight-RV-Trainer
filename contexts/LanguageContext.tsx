@@ -10,7 +10,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.6.8';
+const appVersion = process.env.APP_VERSION || '2.6.9';
 
 const translations = {
   en: {
@@ -182,7 +182,7 @@ const translations = {
     "analyzingDesc": "Comparing your sketch with the blind target.",
     "savingDesc": "Encrypting and saving your session data...",
     "analysisFailed": "Analysis Failed",
-    "analysisErrorDesc": "AI හට විශ්ලේෂණය සම්පූර්ණ කිරීමට නොහැකි විය. කරුණාකර ඔබගේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
+    "analysisErrorDesc": "AI Analysis could not be completed. Please check your connection and try again.",
     "tryAgain": "Try Again",
     "returnToReview": "Return to Review",
 
@@ -212,6 +212,13 @@ const translations = {
     "saveRemarks": "Save & Review",
     "savingReview": "Saving & Recalculating...",
     "remarksSaved": "Updated!",
+    
+    // Open Analysis
+    "btnAnalyzeOpen": "Ask AI Analyst",
+    "btnAnalyzeOpenDesc": "Ask AI to guess your target based on your sketch (Uses Cloud).",
+    "aiPrediction": "AI PREDICTION",
+    "analystReport": "Analyst Report",
+    "analyzingOpen": "Interpreting Data...",
 
     // Auth Modal
     "welcomeBackAuth": "Welcome Back",
@@ -435,6 +442,13 @@ const translations = {
     "saveRemarks": "සුරකින්න සහ සමාලෝචනය කරන්න",
     "savingReview": "සුරැකීම සහ නැවත ගණනය කිරීම...",
     "remarksSaved": "යාවත්කාලීනයි!",
+
+    // Open Analysis
+    "btnAnalyzeOpen": "AI විශ්ලේෂකයා අමතන්න",
+    "btnAnalyzeOpenDesc": "ඔබේ සිතුවම මත පදනම්ව ඔබ දුටුවේ කුමක්දැයි අනුමාන කිරීමට AIගෙන් විමසන්න.",
+    "aiPrediction": "AI අනාවැකිය",
+    "analystReport": "විශ්ලේෂක වාර්තාව",
+    "analyzingOpen": "දත්ත අර්ථකථනය කරමින්...",
 
     // Auth Modal
     "welcomeBackAuth": "නැවත සාදරයෙන් පිළිගනිමු",
