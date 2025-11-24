@@ -152,7 +152,7 @@ function App() {
       if (!user) return;
       setIsOpenAnalyzing(true);
       try {
-          const result = await analyzeOpenSession(session.userSketchBase64, session.userNotes);
+          const result = await analyzeOpenSession(session.userSketchBase64, session.userNotes, session.targetIntent);
           
           const updatedData: Partial<SessionData> = {
               aiGuessedSubject: result.subject,
@@ -438,12 +438,21 @@ function App() {
      };
 
      return (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] w-full animate-in fade-in duration-700">
+        <div className="flex flex-col items-center justify-center min-h-[70vh] w-full animate-in fade-in duration-700 relative overflow-hidden">
+           {/* Background "Ghost" Data */}
+           {!isResetting && (
+             <div className="absolute inset-0 opacity-20 pointer-events-none flex items-center justify-center z-0 scale-95 transition-all duration-1000">
+                {userSketch && <img src={userSketch} className="w-full h-full object-contain blur-sm" alt="" />}
+                <div className="absolute inset-0 bg-slate-950/50" />
+             </div>
+           )}
+
+           {/* Transitioning Content */}
            {!isResetting ? (
-               <div className="text-center space-y-8 p-4">
+               <div className="text-center space-y-8 p-4 z-10 relative">
                    <div className="relative mx-auto w-32 h-32">
-                       <div className="absolute inset-0 bg-slate-800 rounded-full overflow-hidden border-2 border-slate-700 flex items-center justify-center">
-                            <div className="w-full h-full opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] animate-pulse"></div>
+                       <div className="absolute inset-0 bg-slate-800/80 backdrop-blur-md rounded-full overflow-hidden border-2 border-slate-700 flex items-center justify-center shadow-xl">
+                            <div className="w-full h-full opacity-30 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] animate-pulse"></div>
                             <Eraser className="relative z-10 text-slate-400" size={32} />
                        </div>
                    </div>
@@ -460,8 +469,13 @@ function App() {
                </div>
            ) : (
                <div className="relative w-full h-full flex flex-col items-center justify-center">
-                    <div className="w-96 h-96 rounded-full bg-white animate-[ping_3s_ease-out_forwards] absolute opacity-10"></div>
-                    <div className="w-64 h-64 rounded-full border border-white/50 animate-[ping_2s_ease-out_infinite] absolute"></div>
+                    {/* Dissolving Animation */}
+                    <div className="absolute inset-0 bg-black animate-[pulse_0.2s_ease-in-out_infinite] opacity-50 z-0"></div>
+                    <div className="w-full h-full absolute bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 animate-pulse"></div>
+                    
+                    <div className="w-96 h-96 rounded-full bg-white animate-[ping_3s_ease-out_forwards] absolute opacity-5"></div>
+                    <div className="w-64 h-64 rounded-full border border-white/30 animate-[ping_2s_ease-out_infinite] absolute"></div>
+                    
                     <div className="z-10 text-center space-y-4">
                         <CheckCircle2 className="mx-auto text-green-400 w-16 h-16 animate-in zoom-in duration-500 delay-1000" />
                         <h2 className="text-3xl font-bold text-white tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">

@@ -191,6 +191,7 @@ export const recalculateScore = async (
 export const analyzeOpenSession = async (
   userSketchBase64: string | null,
   userNotes: string,
+  targetIntent?: string,
   language: 'en' | 'si' = 'en'
 ): Promise<OpenAnalysisResult> => {
   if (!process.env.API_KEY) throw new Error("API Key is missing");
@@ -213,24 +214,29 @@ export const analyzeOpenSession = async (
   });
 
   const langInstruction = "Respond in English.";
+  
+  const intentContext = targetIntent 
+    ? `IMPORTANT CONTEXT: The viewer was attempting to view: "${targetIntent}". Use this intent to interpret the ambiguous lines and shapes in the sketch.` 
+    : `The target is UNKNOWN. You must deduce the subject purely from the visual shapes and sensory words.`;
 
   parts.push({
     text: `
       You are a Remote Viewing Analyst known as "The Monitor".
-      The viewer has just completed a blind session. You do NOT know what the target is.
+      The viewer has completed a blind session.
+      
+      ${intentContext}
       
       Your task:
-      Analyze the sketch and the notes provided. Based purely on this data, construct a profile of what the viewer perceived.
-      
+      Analyze the sketch and the notes provided.
       1. Synthesize the visual forms from the sketch.
       2. Synthesize the sensory adjectives from the notes.
-      3. Make an educated PREDICTION (Guess) of what the subject matter is.
+      3. ${targetIntent ? 'Explain how the sketch matches (or fails to match) the intended target.' : 'Make an educated PREDICTION of what the subject matter is.'}
       
       ${langInstruction}
       
       Respond in JSON:
-      - subject: A short title (3-5 words) of what you think they saw (e.g., "A tall man-made tower" or "A flowing body of water").
-      - analysis: A paragraph explaining why you think so based on their specific lines, shapes, and words.
+      - subject: A short title (3-5 words) of what is depicted.
+      - analysis: A paragraph explaining your interpretation. If intent was provided, highlight which parts of the sketch correspond to that intent.
     `
   });
 
