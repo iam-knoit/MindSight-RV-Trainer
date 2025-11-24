@@ -18,15 +18,17 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
 
   if (!isOpen) return null;
 
-  // Calculate Stats
-  const totalSessions = history.length;
+  // Calculate Stats - Filter for Training Sessions only to avoid skewing data with Open sessions
+  const trainingHistory = history.filter(s => s.sessionType === 'TRAINING' && s.aiScore !== undefined);
+  
+  const totalSessions = trainingHistory.length;
   const avgScore = totalSessions > 0 
-    ? Math.round(history.reduce((acc, s) => acc + s.aiScore, 0) / totalSessions) 
+    ? Math.round(trainingHistory.reduce((acc, s) => acc + (s.aiScore || 0), 0) / totalSessions) 
     : 0;
   const bestScore = totalSessions > 0 
-    ? Math.max(...history.map(s => s.aiScore)) 
+    ? Math.max(...trainingHistory.map(s => s.aiScore || 0)) 
     : 0;
-  const totalSeconds = history.reduce((acc, s) => acc + (s.durationSeconds || 0), 0);
+  const totalSeconds = trainingHistory.reduce((acc, s) => acc + (s.durationSeconds || 0), 0);
 
   const formatDuration = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -185,6 +187,13 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
                  );
                })}
              </div>
+          </div>
+          
+          <div className="mt-8 flex justify-center">
+              <p className="text-xs text-slate-500 flex items-center gap-2">
+                <Lightbulb size={14} className="text-yellow-500/50" />
+                {t('aiCoachPrompt')}
+              </p>
           </div>
 
         </div>

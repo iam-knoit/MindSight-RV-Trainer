@@ -204,7 +204,10 @@ function App() {
   };
 
   const initializeTrainingSession = async () => {
-    setSessionNumber(history.length + 1);
+    // Only count previous training sessions for the session number
+    const trainingCount = history.filter(s => s.sessionType === 'TRAINING').length;
+    setSessionNumber(trainingCount + 1);
+    
     setIsLoading(true);
     setLoadingMessage(t('startSessionLoading'));
     sessionRef.current = true; 
@@ -227,7 +230,10 @@ function App() {
   };
 
   const initializeOpenSession = () => {
-    setSessionNumber(history.length + 1);
+    // Only count previous open sessions for the session number
+    const openCount = history.filter(s => s.sessionType === 'OPEN').length;
+    setSessionNumber(openCount + 1);
+
     sessionRef.current = true;
     startTimeRef.current = Date.now();
     resetSessionState();
