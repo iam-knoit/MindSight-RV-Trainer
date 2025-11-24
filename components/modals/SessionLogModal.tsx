@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { X, Trash2, Calendar, Clock, Target, Compass, Brain, Filter, AlertCircle, ArrowLeft, ImagePlus, Wand2, Loader2, Save } from 'lucide-react';
+import { X, Trash2, Calendar, Clock, Target, Compass, Brain, Filter, AlertCircle, ArrowLeft, ImagePlus, Wand2, Loader2, Save, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SessionData } from '../../types';
-import { generateVisualReconstruction } from '../../services/geminiService';
+import { generateVisualReconstruction, analyzeOpenSession } from '../../services/geminiService';
 
 interface SessionLogModalProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ const SessionLogModal: React.FC<SessionLogModalProps> = ({ isOpen, onClose, hist
   // States for Open Mode Generation
   const [reconstructionDetails, setReconstructionDetails] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   if (!isOpen) return null;
 
@@ -60,6 +61,31 @@ const SessionLogModal: React.FC<SessionLogModalProps> = ({ isOpen, onClose, hist
       alert("Failed to generate image. Please try again.");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleRegenerateAnalysis = async () => {
+    if (!selectedSession) return;
+    setIsAnalyzing(true);
+    try {
+        const result = await analyzeOpenSession(
+            selectedSession.userSketchBase64,
+            selectedSession.userNotes,
+            selectedSession.targetIntent
+        );
+
+        const updatedData: Partial<SessionData> = {
+            aiGuessedSubject: result.subject,
+            aiFeedback: result.analysis
+        };
+
+        await onUpdateSession(selectedSession.id, updatedData);
+        setSelectedSession(prev => prev ? { ...prev, ...updatedData } : null);
+    } catch (e) {
+        console.error("Analysis regeneration failed", e);
+        alert("Failed to regenerate analysis. Please check your connection.");
+    } finally {
+        setIsAnalyzing(false);
     }
   };
 
@@ -156,7 +182,6 @@ const SessionLogModal: React.FC<SessionLogModalProps> = ({ isOpen, onClose, hist
 
   const renderDetailView = () => {
     if (!selectedSession) return null;
-    const isOpen = true; // Always true in this filtered view
 
     return (
         <div className="flex-grow overflow-y-auto p-6 space-y-6 custom-scrollbar">
@@ -245,12 +270,29 @@ const SessionLogModal: React.FC<SessionLogModalProps> = ({ isOpen, onClose, hist
                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">User Notes</h4>
                     <p className="text-slate-300 text-sm whitespace-pre-wrap">{selectedSession.userNotes || "No notes."}</p>
                 </div>
-                {selectedSession.aiFeedback && (
-                    <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700">
-                         <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">AI Analysis</h4>
-                         <p className="text-slate-300 text-sm whitespace-pre-wrap">{selectedSession.aiFeedback}</p>
-                    </div>
-                )}
+                
+                {/* AI Analysis Block */}
+                <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700">
+                     <div className="flex justify-between items-center mb-3">
+                        <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">AI Analysis</h4>
+                        <button 
+                            onClick={handleRegenerateAnalysis}
+                            disabled={isAnalyzing}
+                            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        >
+                            <RefreshCw size={12} className={isAnalyzing ? "animate-spin" : ""} />
+                            {isAnalyzing ? t('analyzing') : t('regenerateAnalysis')}
+                        </button>
+                     </div>
+                     {selectedSession.aiGuessedSubject ? (
+                         <>
+                            <div className="mb-2 text-white font-bold text-lg">"{selectedSession.aiGuessedSubject}"</div>
+                            <p className="text-slate-300 text-sm whitespace-pre-wrap">{selectedSession.aiFeedback}</p>
+                         </>
+                     ) : (
+                         <p className="text-slate-500 text-sm italic">Analysis not performed or failed.</p>
+                     )}
+                </div>
             </div>
         </div>
     );

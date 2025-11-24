@@ -39,6 +39,7 @@ const translations = {
     "analyzing": "Analyzing...",
     "generateReport": "Generate Report",
     "regenerateReport": "Refresh Analysis",
+    "regenerateAnalysis": "Regenerate Analysis",
     "noHistory": "No history yet.",
     "totalTime": "Total Training Time",
     "viewAnalytics": "View Full Analytics",

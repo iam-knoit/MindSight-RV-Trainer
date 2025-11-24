@@ -1,11 +1,32 @@
 
-import { GoogleGenAI, Type, Chat } from "@google/genai";
+import { GoogleGenAI, Type, Chat, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { ScoringResult, SessionData, CoachReport, OpenAnalysisResult } from '../types';
 
 const cleanBase64 = (data: string) => {
     // Remove data:image/xyz;base64, prefix if present
     return data.replace(/^data:image\/\w+;base64,/, "");
 }
+
+// Define permissive safety settings to avoid blocking valid RV data (e.g. anatomy, disasters)
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    // The "3rd one": Allow Sexually Explicit content (useful for biological/artistic targets)
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+];
 
 export const analyzeSession = async (
   targetImageBase64: string,
@@ -78,6 +99,7 @@ export const analyzeSession = async (
       model: 'gemini-2.5-flash',
       contents: { parts },
       config: {
+        safetySettings: safetySettings,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -165,6 +187,7 @@ export const recalculateScore = async (
       model: 'gemini-2.5-flash',
       contents: { parts },
       config: {
+        safetySettings: safetySettings,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -245,6 +268,7 @@ export const analyzeOpenSession = async (
       model: 'gemini-2.5-flash',
       contents: { parts },
       config: {
+        safetySettings: safetySettings,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -293,6 +317,10 @@ export const generateVisualReconstruction = async (
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [{ text: prompt }]
+      },
+      config: {
+        // Image generation models do not support standard safetySettings array in the same way, 
+        // but general content policies apply. We rely on defaults here.
       }
     });
 
@@ -349,6 +377,9 @@ export const generateTargetImage = async (): Promise<{ url: string; base64: stri
             },
             { text: "Describe this scene concisely in one sentence for a remote viewing target. Focus on major forms and subject." }
           ]
+        },
+        config: {
+          safetySettings: safetySettings
         }
       });
       if (descriptionResponse.text) {
@@ -414,6 +445,7 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
       model: 'gemini-2.5-flash',
       contents: { parts: [{ text: prompt }] },
       config: {
+        safetySettings: safetySettings,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -476,7 +508,8 @@ export const createCoachChat = (history: SessionData[], language: 'en' | 'si' = 
   return ai.chats.create({
     model: 'gemini-2.5-flash',
     config: {
-      systemInstruction: systemInstruction
+      systemInstruction: systemInstruction,
+      safetySettings: safetySettings
     }
   });
 };
