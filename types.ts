@@ -5,6 +5,7 @@ export enum SessionState {
   ANALYZING = 'ANALYZING',
   FEEDBACK = 'FEEDBACK',
   DOJO = 'DOJO', // New state for Intuition Dojo
+  RESET = 'RESET', // New state for Mental Reset
 }
 
 export interface SessionData {

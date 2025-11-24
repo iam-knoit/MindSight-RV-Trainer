@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown, Sprout, Feather, Radio, Activity } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown, Sprout, Feather, Radio, Activity, Eraser } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData } from './services/firebase';
@@ -661,6 +661,9 @@ function App() {
   const [remarksInput, setRemarksInput] = useState('');
   const [isSavingRemarks, setIsSavingRemarks] = useState(false);
   const [remarksSaved, setRemarksSaved] = useState(false);
+  
+  // Reset State Animation
+  const [isResetting, setIsResetting] = useState(false);
 
   const sessionRef = useRef<boolean>(false);
   const startTimeRef = useRef<number>(0);
@@ -767,6 +770,11 @@ function App() {
     } finally {
       setAnalyzingHistory(false);
     }
+  };
+
+  const triggerResetAndStart = () => {
+      setState(SessionState.RESET);
+      setIsResetting(false); // Initially false, user triggers it
   };
 
   const startSession = async () => {
@@ -923,7 +931,7 @@ function App() {
         </button>
         
         <div className="flex items-center gap-6">
-          {state !== SessionState.IDLE && state !== SessionState.DOJO && (
+          {state !== SessionState.IDLE && state !== SessionState.DOJO && state !== SessionState.RESET && (
              <div className="hidden md:flex items-center gap-4">
                <div className="bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 font-mono text-sm font-bold text-blue-400">
                   {t('session')} #{sessionNumber}
@@ -941,7 +949,7 @@ function App() {
              </div>
           )}
           
-          {state !== SessionState.IDLE && !isDojoLocked && (
+          {state !== SessionState.IDLE && state !== SessionState.RESET && !isDojoLocked && (
             <button
               type="button"
               onClick={goHome}
@@ -996,6 +1004,66 @@ function App() {
       </div>
     </header>
   );
+
+  const renderReset = () => {
+     // Animation handler
+     const handleResetAction = () => {
+         setIsResetting(true);
+         // After animation completes, start the new session
+         setTimeout(() => {
+             startSession();
+         }, 3000);
+     };
+
+     return (
+        <div className="flex flex-col items-center justify-center min-h-[70vh] w-full animate-in fade-in duration-700">
+           
+           {!isResetting ? (
+               <div className="text-center space-y-8 p-4">
+                   <div className="relative mx-auto w-32 h-32">
+                       {/* Static Noise Placeholder */}
+                       <div className="absolute inset-0 bg-slate-800 rounded-full overflow-hidden border-2 border-slate-700 flex items-center justify-center">
+                            <div className="w-full h-full opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] animate-pulse"></div>
+                            <Eraser className="relative z-10 text-slate-400" size={32} />
+                       </div>
+                   </div>
+                   
+                   <div>
+                       <h2 className="text-2xl font-bold text-white mb-2">{t('resetTitle')}</h2>
+                       <p className="text-slate-400 max-w-md mx-auto">{t('resetInstruction')}</p>
+                   </div>
+
+                   <button
+                       onClick={handleResetAction}
+                       className="px-8 py-4 bg-slate-100 text-slate-900 hover:bg-white rounded-full font-bold transition-all shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)] hover:scale-105"
+                   >
+                       {t('resetAction')}
+                   </button>
+                   
+                   <button 
+                       onClick={() => startSession()}
+                       className="text-slate-600 text-sm hover:text-slate-400 block mx-auto mt-4"
+                   >
+                       Skip
+                   </button>
+               </div>
+           ) : (
+               <div className="relative w-full h-full flex flex-col items-center justify-center">
+                    {/* Dissolve Animation */}
+                    <div className="w-96 h-96 rounded-full bg-white animate-[ping_3s_ease-out_forwards] absolute opacity-10"></div>
+                    <div className="w-64 h-64 rounded-full border border-white/50 animate-[ping_2s_ease-out_infinite] absolute"></div>
+                    
+                    <div className="z-10 text-center space-y-4">
+                        <CheckCircle2 className="mx-auto text-green-400 w-16 h-16 animate-in zoom-in duration-500 delay-1000" />
+                        <h2 className="text-3xl font-bold text-white tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
+                            {t('resetComplete')}
+                        </h2>
+                    </div>
+               </div>
+           )}
+        </div>
+     );
+  };
 
   const renderIdle = () => {
     const totalSeconds = history.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
@@ -1307,7 +1375,7 @@ function App() {
                <button
                  onClick={() => {
                    sessionRef.current = false;
-                   setState(SessionState.IDLE);
+                   triggerResetAndStart();
                  }}
                  className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
                >
@@ -1516,6 +1584,7 @@ function App() {
             lockedMode={isDojoLocked}
           />
         )}
+        {state === SessionState.RESET && renderReset()}
         {state === SessionState.VIEWING && renderViewing()}
         {state === SessionState.ANALYZING && renderAnalyzing()}
         {state === SessionState.FEEDBACK && renderFeedback()}

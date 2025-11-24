@@ -10,7 +10,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.6.6';
+const appVersion = process.env.APP_VERSION || '2.6.7';
 
 const translations = {
   en: {
@@ -110,6 +110,13 @@ const translations = {
     "dojoLockedMsg": "LOCKED: Achieve a Streak of 3 to return.",
     "dojoUnlockedMsg": "CALIBRATION COMPLETE. You may return.",
 
+    // Reset Phase
+    "resetTitle": "Mental Buffer Clear",
+    "resetDesc": "Dissolving residual data patterns...",
+    "resetAction": "Clear & Initialize",
+    "resetComplete": "Buffer Cleared",
+    "resetInstruction": "Visualize the previous target dissolving into static, then fading to black. Disconnect.",
+
     // Steps
     "stepFocus": "Focus",
     "stepImpressions": "Impressions",
@@ -162,7 +169,7 @@ const translations = {
     "analyzingTitle": "Analyzing Session...",
     "analyzingDesc": "Comparing your sketch with the blind target.",
     "analysisFailed": "Analysis Failed",
-    "analysisErrorDesc": "The AI could not complete the analysis. Please check your internet connection and try again.",
+    "analysisErrorDesc": "AI හට විශ්ලේෂණය සම්පූර්ණ කිරීමට නොහැකි විය. කරුණාකර ඔබගේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
     "tryAgain": "Try Again",
     "returnToReview": "Return to Review",
 
@@ -308,6 +315,13 @@ const translations = {
     "calibrationDesc": "ඔබගේ ලකුණු 50% ට වඩා අඩු විය. දිගටම කරගෙන යාමට පෙර ඔබ Dojo හි ඔබේ ඉව නැවත ක්‍රමාංකනය කළ යුතුය.",
     "dojoLockedMsg": "අගුලු දමා ඇත: ආපසු යාමට අඛණ්ඩව 3 වතාවක් නිවැරදි වන්න.",
     "dojoUnlockedMsg": "ක්‍රමාංකනය සම්පූර්ණයි. ඔබට ආපසු යා හැක.",
+
+    // Reset Phase
+    "resetTitle": "මනස පිරිසිදු කිරීම",
+    "resetDesc": "පෙර මතකයන් ඉවත් කිරීම...",
+    "resetAction": "පිරිසිදු කර අරඹන්න",
+    "resetComplete": "මතකය පිරිසිදුයි",
+    "resetInstruction": "පෙර ඉලක්කය මැකී ගොස් අඳුරට වැටෙන ආකාරය මවාගන්න. විසන්ධි වන්න.",
 
     // Steps
     "stepFocus": "අවධානය",
