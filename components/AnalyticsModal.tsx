@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, TrendingUp, Trophy, Clock, Activity, Target, Zap, ArrowRightCircle, Award, Lightbulb } from 'lucide-react';
+import { X, TrendingUp, Trophy, Clock, Activity, Target, Zap, ArrowRightCircle, Award, Lightbulb, Map, Lock, Check, Circle } from 'lucide-react';
 import { SessionData, CoachReport } from '../types';
 import HistoryChart from './HistoryChart';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -42,6 +42,14 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
 
   const currentLevel = calculateLevel(avgScore);
   const capabilityKey = `cap_lvl${currentLevel}`;
+
+  // Helper for Level Ranges display
+  const getLevelRange = (lvl: number) => {
+    if (lvl === 1) return "0% - 19%";
+    if (lvl === 9) return "90% - 100%";
+    const base = 20 + (lvl - 2) * 10;
+    return `${base}% - ${base + 9}%`;
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
@@ -93,7 +101,7 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
             <HistoryChart sessions={history} />
           </div>
 
-          {/* Current Capabilities (Replaced Immediate Action) */}
+          {/* Current Capabilities */}
           <div className="space-y-4">
              <h3 className="text-xl font-bold text-white flex items-center gap-2">
                <Award className="text-yellow-500" />
@@ -119,6 +127,55 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
                         </p>
                     </div>
                  </div>
+             </div>
+          </div>
+
+          {/* Level Roadmap */}
+          <div className="space-y-4">
+             <h3 className="text-xl font-bold text-white flex items-center gap-2 mt-8 mb-4">
+               <Map className="text-blue-400" />
+               {t('rankRoadmap')}
+             </h3>
+             
+             <div className="relative border-l-2 border-slate-800 ml-4 pl-8 space-y-8">
+               {Array.from({ length: 9 }).map((_, i) => {
+                 const level = i + 1;
+                 const isPassed = level < currentLevel;
+                 const isCurrent = level === currentLevel;
+                 const isFuture = level > currentLevel;
+
+                 return (
+                   <div key={level} className={`relative transition-all duration-300 ${isCurrent ? 'scale-105' : 'opacity-80'}`}>
+                     {/* Node Indicator */}
+                     <div className={`absolute -left-[41px] top-1 w-6 h-6 rounded-full border-4 flex items-center justify-center
+                       ${isPassed ? 'bg-green-500 border-green-500 text-slate-900' : ''}
+                       ${isCurrent ? 'bg-slate-900 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : ''}
+                       ${isFuture ? 'bg-slate-900 border-slate-700' : ''}
+                     `}>
+                       {isPassed && <Check size={12} strokeWidth={4} />}
+                       {isCurrent && <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />}
+                       {isFuture && <Lock size={10} className="text-slate-600" />}
+                     </div>
+
+                     {/* Content */}
+                     <div className={`p-4 rounded-xl border transition-colors 
+                       ${isCurrent ? 'bg-blue-900/10 border-blue-500/50' : 'bg-slate-800/30 border-slate-800'}
+                       ${isFuture ? 'opacity-50' : 'opacity-100'}
+                     `}>
+                       <div className="flex justify-between items-center mb-1">
+                         <h4 className={`text-sm font-bold uppercase tracking-wide 
+                           ${isPassed ? 'text-green-500' : isCurrent ? 'text-blue-400' : 'text-slate-500'}
+                         `}>
+                           {t('level')} {level}: {t(`lvl${level}`)}
+                         </h4>
+                         <span className="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded">
+                           {getLevelRange(level)}
+                         </span>
+                       </div>
+                     </div>
+                   </div>
+                 );
+               })}
              </div>
           </div>
 

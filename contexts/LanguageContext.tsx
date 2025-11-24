@@ -77,6 +77,7 @@ const translations = {
     "totalSessions": "Total Sessions",
     "currentCapabilities": "Current Capabilities",
     "currentCapabilitiesDesc": "Based on your rank, here is your assessed operational ability.",
+    "rankRoadmap": "Rank Roadmap",
     "close": "Close",
     "aiCoachPrompt": "Click \"Generate AI Coach Report\" on the dashboard to see your Recommended Action.",
 
@@ -275,6 +276,7 @@ const translations = {
     "totalSessions": "මුළු සැසි",
     "currentCapabilities": "වත්මන් හැකියාවන්",
     "currentCapabilitiesDesc": "ඔබේ තරාතිරම මත පදනම්ව, ඔබේ තක්සේරු කළ මෙහෙයුම් හැකියාව මෙන්න.",
+    "rankRoadmap": "තනතුරු සිතියම",
     "close": "වසන්න",
     "aiCoachPrompt": "ඔබගේ නිර්දේශිත ක්‍රියාව බැලීමට උපකරණ පුවරුවේ 'AI උපදේශක වාර්තාව' ක්ලික් කරන්න.",
 
