@@ -108,6 +108,16 @@ export const updateSessionRemarks = async (userId: string, sessionId: string, re
   }
 };
 
+export const updateSessionData = async (userId: string, sessionId: string, data: Partial<SessionData>) => {
+  try {
+    const sessionRef = doc(db, 'users', userId, 'sessions', sessionId);
+    await updateDoc(sessionRef, data);
+  } catch (error) {
+    console.error("Error updating session data", error);
+    throw error;
+  }
+};
+
 export const subscribeToHistory = (userId: string, callback: (sessions: SessionData[]) => void) => {
   const sessionsRef = collection(db, 'users', userId, 'sessions');
   // Order by timestamp descending (newest first)

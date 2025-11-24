@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { X, TrendingUp, Trophy, Clock, Activity, Target, Map } from 'lucide-react';
+import { X, TrendingUp, Trophy, Clock, Activity, Target, Zap, ArrowRightCircle, Award, Lightbulb } from 'lucide-react';
 import { SessionData, CoachReport } from '../types';
 import HistoryChart from './HistoryChart';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -31,6 +32,16 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
     const m = Math.floor((seconds % 3600) / 60);
     return `${h}h ${m}m`;
   };
+
+  // Re-calculate Level for display (Logic copied to be self-contained in modal)
+  const calculateLevel = (score: number) => {
+    if (score < 20) return 1;
+    if (score >= 90) return 9;
+    return Math.floor((score - 20) / 10) + 2;
+  };
+
+  const currentLevel = calculateLevel(avgScore);
+  const capabilityKey = `cap_lvl${currentLevel}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
@@ -82,35 +93,35 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
             <HistoryChart sessions={history} />
           </div>
 
-          {/* Future Steps (AI Generated) */}
-          {coachReport && coachReport.futureSteps && (
-            <div className="space-y-4">
-               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                 <Map className="text-cyan-400" />
-                 {t('futureSteps')}
-               </h3>
-               <p className="text-slate-400 text-sm">{t('futureStepsDesc')}</p>
+          {/* Current Capabilities (Replaced Immediate Action) */}
+          <div className="space-y-4">
+             <h3 className="text-xl font-bold text-white flex items-center gap-2">
+               <Award className="text-yellow-500" />
+               {t('currentCapabilities')}
+             </h3>
+             <p className="text-slate-400 text-sm">{t('currentCapabilitiesDesc')}</p>
 
-               <div className="grid gap-4 md:grid-cols-3">
-                  {coachReport.futureSteps.map((step, idx) => (
-                    <div key={idx} className="bg-slate-800/30 border border-slate-700 p-5 rounded-xl relative overflow-hidden hover:border-blue-500/50 transition-colors group">
-                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-                       <div className="text-4xl font-bold text-slate-700 mb-2 absolute right-4 bottom-2 opacity-20 group-hover:opacity-40 pointer-events-none">
-                         {idx + 1}
-                       </div>
-                       <h4 className="text-blue-200 font-semibold mb-1">Step {idx + 1}</h4>
-                       <p className="text-slate-300 text-sm leading-relaxed">{step}</p>
+             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 rounded-2xl relative overflow-hidden group shadow-lg">
+                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Lightbulb size={120} />
+                 </div>
+                 
+                 <div className="relative z-10 flex flex-col md:flex-row items-start gap-6">
+                    <div className="bg-yellow-500/20 rounded-full p-4 border border-yellow-500/30">
+                        <Award size={32} className="text-yellow-500" />
                     </div>
-                  ))}
-               </div>
-            </div>
-          )}
-
-          {!coachReport && totalSessions >= 3 && (
-             <div className="text-center p-8 border border-dashed border-slate-700 rounded-xl text-slate-500">
-                {t('aiCoachPrompt')}
+                    <div>
+                        <h4 className="text-lg font-bold text-yellow-500 mb-2 uppercase tracking-wide">
+                          {t(`lvl${currentLevel}`)}
+                        </h4>
+                        <p className="text-lg text-slate-200 leading-relaxed">
+                          "{t(capabilityKey)}"
+                        </p>
+                    </div>
+                 </div>
              </div>
-          )}
+          </div>
+
         </div>
       </div>
     </div>

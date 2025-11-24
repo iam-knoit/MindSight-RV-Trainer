@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { ScoringResult, SessionData, CoachReport } from '../types';
 
@@ -103,6 +104,94 @@ export const analyzeSession = async (
   }
 };
 
+export const recalculateScore = async (
+  session: SessionData,
+  remarks: string,
+  language: 'en' | 'si' = 'en'
+): Promise<ScoringResult> => {
+  if (!process.env.API_KEY) {
+    throw new Error("API Key is missing");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const parts: any[] = [];
+
+  parts.push({
+    inlineData: {
+      mimeType: "image/jpeg",
+      data: cleanBase64(session.targetImageBase64),
+    },
+  });
+  parts.push({ text: "TARGET IMAGE" });
+
+  if (session.userSketchBase64) {
+    parts.push({
+      inlineData: {
+        mimeType: "image/png",
+        data: cleanBase64(session.userSketchBase64),
+      },
+    });
+    parts.push({ text: "USER SKETCH" });
+  }
+
+  const langInstruction = language === 'si' 
+    ? "Respond in Sinhala language (use Sinhala script)." 
+    : "Respond in English.";
+
+  parts.push({
+    text: `
+      CONTEXT: You previously scored this Remote Viewing session.
+      Original Score: ${session.aiScore}
+      Original Feedback: "${session.aiFeedback}"
+      User Original Notes: "${session.userNotes}"
+
+      NEW INFORMATION - USER REMARKS:
+      "${remarks}"
+
+      TASK:
+      Review the session in light of the user's new remarks. 
+      Determine if the user has pointed out a valid connection, clarified a misinterpreted gestalt, or highlighted a technical detail that justifies a score adjustment.
+      
+      - Be fair but rigorous. Do not raise the score just because they asked. 
+      - Only raise the score if the remarks prove that the viewer actually perceived correct data that was overlooked or misunderstood in the first analysis.
+      - If the remarks are irrelevant or incorrect, keep the score roughly the same.
+
+      ${langInstruction}
+
+      Return JSON:
+      - score: The updated integer score (0-100).
+      - feedback: Updated feedback incorporating the review of their remarks. Mention whether the score changed and why.
+    `
+  });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: { parts },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.INTEGER },
+            feedback: { type: Type.STRING }
+          },
+          required: ["score", "feedback"]
+        }
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as ScoringResult;
+    } else {
+      throw new Error("Empty response during recalculation");
+    }
+  } catch (error) {
+    console.error("Recalculation failed:", error);
+    throw error;
+  }
+};
+
 export const generateTargetImage = async (): Promise<{ url: string; base64: string; description: string }> => {
   if (!process.env.API_KEY) {
     throw new Error("API Key is missing");
@@ -178,6 +267,7 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
     Session ${i + 1}:
     - Score: ${s.aiScore}/100
     - AI Feedback: "${s.aiFeedback}"
+    - Duration: ${s.durationSeconds ? s.durationSeconds + 's' : 'Unknown'}
   `).join('\n');
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -188,19 +278,20 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
 
   const prompt = `
     You are a Remote Viewing Instructor. Analyze the following training history for a student.
-    Identify patterns in their performance. Are they improving? Do they consistently miss specific types of data (e.g., colors, shapes, motion)?
     
     HISTORY LOG:
     ${historyText}
     
     ${langInstruction}
 
-    Based on this, provide a JSON report with:
+    Based on their recent performance (especially the last 3 sessions), determine the SINGLE MOST IMPORTANT thing they should do RIGHT NOW to improve.
+    
+    Provide a JSON report with:
     1. trendSummary: A 1-sentence overview of their progress.
     2. strengths: A list of 2-3 things they are doing well.
     3. weaknesses: A list of 2-3 things they need to improve.
-    4. trainingTips: A list of 2-3 specific actionable exercises to improve.
-    5. futureSteps: A list of 3 distinct, actionable milestones/goals they should aim for next (e.g. "Achieve 3 sessions > 75%").
+    4. trainingTips: A list of 2-3 specific actionable exercises.
+    5. immediateAction: A single, highly specific task the student should do right now (e.g., "Do a 5-minute breathing exercise," "Practice Texture words in the Sensory Helper," or "Go to the Intuition Dojo").
   `;
 
   try {
@@ -216,9 +307,9 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
             strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
             weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
             trainingTips: { type: Type.ARRAY, items: { type: Type.STRING } },
-            futureSteps: { type: Type.ARRAY, items: { type: Type.STRING } }
+            immediateAction: { type: Type.STRING } // Changed from futureSteps array to single string
           },
-          required: ["trendSummary", "strengths", "weaknesses", "trainingTips", "futureSteps"]
+          required: ["trendSummary", "strengths", "weaknesses", "trainingTips", "immediateAction"]
         }
       }
     });

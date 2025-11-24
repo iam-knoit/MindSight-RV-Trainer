@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX } from 'lucide-react';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
-import { analyzeSession, generateTargetImage, generateCoachReport } from './services/geminiService';
-import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionRemarks } from './services/firebase';
+import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore } from './services/geminiService';
+import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import SketchPad from './components/SketchPad';
 import HistoryChart from './components/HistoryChart';
@@ -656,6 +656,58 @@ function App() {
     { id: 4, title: t('stepReview'), icon: CheckCircle },
   ];
 
+  // --- LEVELING SYSTEM LOGIC ---
+  const calculateLevel = (sessions: SessionData[]) => {
+    if (sessions.length === 0) {
+      return { level: 1, title: 'lvl1', division: null, progress: 0, nextThreshold: 20 };
+    }
+    
+    const avgScore = Math.round(sessions.reduce((acc, s) => acc + s.aiScore, 0) / sessions.length);
+
+    let level = 1;
+    let title = 'lvl1';
+    let division: 'I' | 'II' | 'III' | null = null;
+    let minScore = 0;
+    let maxScore = 100;
+
+    // Logic for 9 Levels
+    // Level 1: 0-19 (No Div)
+    // Level 2: 20-29 (Div I, II, III)
+    // ...
+    // Level 8: 80-89 (Div I, II, III)
+    // Level 9: 90-100 (No Div)
+
+    if (avgScore < 20) {
+       level = 1; title = 'lvl1'; division = null; minScore = 0; maxScore = 20;
+    } else if (avgScore >= 90) {
+       level = 9; title = 'lvl9'; division = null; minScore = 90; maxScore = 100;
+    } else {
+       // Levels 2-8
+       level = Math.floor((avgScore - 20) / 10) + 2;
+       const levelKey = `lvl${level}`;
+       title = levelKey;
+       
+       const baseLevelScore = 20 + (level - 2) * 10; // e.g., Level 2 base is 20
+       const relativeScore = avgScore - baseLevelScore; // 0-9 within the level
+       
+       if (relativeScore <= 3) division = 'I';
+       else if (relativeScore <= 6) division = 'II';
+       else division = 'III';
+
+       minScore = baseLevelScore;
+       maxScore = baseLevelScore + 10;
+    }
+
+    // Calculate progress percentage within current rank/level for the progress bar
+    const totalRange = maxScore - minScore;
+    const currentProgress = avgScore - minScore;
+    const progressPercent = Math.min(100, Math.max(0, (currentProgress / totalRange) * 100));
+
+    return { level, title, division, progress: progressPercent, nextThreshold: maxScore, avgScore };
+  };
+
+  const currentRank = calculateLevel(history);
+
   // Auth State Observer
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -803,13 +855,26 @@ function App() {
     if (!user || !currentSession || !remarksInput.trim()) return;
     setIsSavingRemarks(true);
     try {
-        await updateSessionRemarks(user.uid, currentSession.id, remarksInput);
+        // 1. Recalculate score based on remarks
+        const recalculated = await recalculateScore(currentSession, remarksInput, language);
+        
+        // 2. Prepare updated data
+        const updatedData: Partial<SessionData> = {
+            postSessionRemarks: remarksInput,
+            aiScore: recalculated.score,
+            aiFeedback: recalculated.feedback
+        };
+
+        // 3. Update Cloud
+        await updateSessionData(user.uid, currentSession.id, updatedData);
+        
+        // 4. Update Local State
+        setCurrentSession(prev => prev ? { ...prev, ...updatedData } : null);
+        
         setRemarksSaved(true);
-        // Update local state to reflect change immediately if needed (though firebase sub might handle it)
-        setCurrentSession(prev => prev ? { ...prev, postSessionRemarks: remarksInput } : null);
     } catch (e) {
-        console.error("Failed to save remarks", e);
-        alert("Failed to save remarks.");
+        console.error("Failed to save remarks and recalculate", e);
+        alert("Failed to update session.");
     } finally {
         setIsSavingRemarks(false);
     }
@@ -890,7 +955,10 @@ function App() {
           {user ? (
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex flex-col items-end">
-                 <span className="text-xs text-slate-400">{t('operator')}</span>
+                 {/* Current Rank Badge (Small) */}
+                 <div className="flex items-center gap-1.5 bg-slate-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-yellow-500 border border-slate-700 mb-0.5">
+                    <Crown size={10} /> {t(currentRank.title)} {currentRank.division}
+                 </div>
                  <span className="text-sm font-semibold text-slate-200">{user.displayName || t('viewer')}</span>
               </div>
               {user.photoURL ? (
@@ -1012,61 +1080,95 @@ function App() {
             </div>
           </div>
 
-          <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 flex flex-col">
-            {coachReport ? (
-              <div className="space-y-4 animate-in slide-in-from-right duration-500">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-xs tracking-widest">
-                     <Brain size={14} /> {t('coachReport')}
-                  </div>
-                  <button 
-                    onClick={runCoachAnalysis} 
-                    disabled={analyzingHistory}
-                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
-                    title={t('regenerateReport')}
-                  >
-                    <RefreshCw size={12} className={analyzingHistory ? "animate-spin" : ""} />
-                    {analyzingHistory ? t('analyzing') : t('regenerateReport')}
-                  </button>
-                </div>
-                <p className="text-sm text-slate-300 italic">"{coachReport.trendSummary}"</p>
-                <div className="space-y-3 mt-4">
-                   <div className="bg-green-900/10 border border-green-900/30 rounded-lg p-3">
-                      <h4 className="text-green-400 text-xs font-bold mb-2 flex items-center gap-1"><Check size={12}/> {t('strengths')}</h4>
-                      <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
-                        {coachReport.strengths.map((s,i) => <li key={i}>{s}</li>)}
-                      </ul>
-                   </div>
-                   <div className="bg-red-900/10 border border-red-900/30 rounded-lg p-3">
-                      <h4 className="text-red-400 text-xs font-bold mb-2 flex items-center gap-1"><XCircle size={12}/> {t('weaknesses')}</h4>
-                      <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
-                        {coachReport.weaknesses.map((s,i) => <li key={i}>{s}</li>)}
-                      </ul>
-                   </div>
-                </div>
-                <div className="mt-auto pt-4 border-t border-slate-800">
-                   <h4 className="text-blue-400 text-xs font-bold mb-2 flex items-center gap-1"><Lightbulb size={12}/> {t('tip')}</h4>
-                   <p className="text-xs text-slate-400">{coachReport.trainingTips[0]}</p>
-                </div>
+          <div className="flex flex-col gap-6">
+              {/* RANK CARD */}
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-6 flex flex-col shadow-xl">
+                 <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t('currentRank')}</h4>
+                        <div className="text-2xl font-bold text-white flex items-center gap-2">
+                            <Award className="text-yellow-500" />
+                            {t(currentRank.title)} <span className="text-slate-500 text-lg">{currentRank.division}</span>
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                            {t('level')} {currentRank.level} • {t('avgScore')}: {currentRank.avgScore}%
+                        </div>
+                    </div>
+                    <Medal size={40} className="text-yellow-500/20" />
+                 </div>
+                 
+                 {/* Progress Bar */}
+                 <div className="mt-2">
+                    <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
+                        <span>{t('division')} {currentRank.division || 'I'}</span>
+                        <span>{t('nextRank')}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-700/50">
+                        <div 
+                            className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-1000 ease-out"
+                            style={{ width: `${currentRank.progress}%` }}
+                        />
+                    </div>
+                 </div>
               </div>
-            ) : (
-               <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-4 text-slate-500">
-                  <TrendingUp size={32} className="opacity-20" />
-                  <div>
-                    <p className="text-sm font-semibold">{t('aiCoachReady')}</p>
-                    <p className="text-xs mt-1 max-w-[200px]">{t('aiCoachUnlock')}</p>
-                  </div>
-                  {history.length >= 3 && (
+
+              {/* AI COACH CARD */}
+              <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 flex flex-col flex-grow">
+                {coachReport ? (
+                <div className="space-y-4 animate-in slide-in-from-right duration-500">
+                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-xs tracking-widest">
+                        <Brain size={14} /> {t('coachReport')}
+                    </div>
                     <button 
-                      onClick={runCoachAnalysis}
-                      disabled={analyzingHistory} 
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors"
+                        onClick={runCoachAnalysis} 
+                        disabled={analyzingHistory}
+                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                        title={t('regenerateReport')}
                     >
-                      {analyzingHistory ? t('analyzing') : t('generateReport')}
+                        <RefreshCw size={12} className={analyzingHistory ? "animate-spin" : ""} />
+                        {analyzingHistory ? t('analyzing') : t('regenerateReport')}
                     </button>
-                  )}
-               </div>
-            )}
+                    </div>
+                    <p className="text-sm text-slate-300 italic">"{coachReport.trendSummary}"</p>
+                    <div className="space-y-3 mt-4">
+                    <div className="bg-green-900/10 border border-green-900/30 rounded-lg p-3">
+                        <h4 className="text-green-400 text-xs font-bold mb-2 flex items-center gap-1"><Check size={12}/> {t('strengths')}</h4>
+                        <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
+                            {coachReport.strengths.map((s,i) => <li key={i}>{s}</li>)}
+                        </ul>
+                    </div>
+                    <div className="bg-red-900/10 border border-red-900/30 rounded-lg p-3">
+                        <h4 className="text-red-400 text-xs font-bold mb-2 flex items-center gap-1"><XCircle size={12}/> {t('weaknesses')}</h4>
+                        <ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
+                            {coachReport.weaknesses.map((s,i) => <li key={i}>{s}</li>)}
+                        </ul>
+                    </div>
+                    </div>
+                    <div className="mt-auto pt-4 border-t border-slate-800">
+                    <h4 className="text-blue-400 text-xs font-bold mb-2 flex items-center gap-1"><Lightbulb size={12}/> {t('tip')}</h4>
+                    <p className="text-xs text-slate-400">{coachReport.trainingTips[0]}</p>
+                    </div>
+                </div>
+                ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-4 text-slate-500">
+                    <TrendingUp size={32} className="opacity-20" />
+                    <div>
+                        <p className="text-sm font-semibold">{t('aiCoachReady')}</p>
+                        <p className="text-xs mt-1 max-w-[200px]">{t('aiCoachUnlock')}</p>
+                    </div>
+                    {history.length >= 3 && (
+                        <button 
+                        onClick={runCoachAnalysis}
+                        disabled={analyzingHistory} 
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors"
+                        >
+                        {analyzingHistory ? t('analyzing') : t('generateReport')}
+                        </button>
+                    )}
+                </div>
+                )}
+            </div>
           </div>
         </div>
       )}
@@ -1335,7 +1437,7 @@ function App() {
                             : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
                     >
                         {isSavingRemarks ? <RefreshCw className="animate-spin" size={16} /> : remarksSaved ? <Check size={16} /> : <Save size={16} />}
-                        {remarksSaved ? t('remarksSaved') : t('saveRemarks')}
+                        {isSavingRemarks ? t('savingReview') : remarksSaved ? t('remarksSaved') : t('saveRemarks')}
                     </button>
                 </div>
             </div>

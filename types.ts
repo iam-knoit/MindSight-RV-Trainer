@@ -1,3 +1,4 @@
+
 export enum SessionState {
   IDLE = 'IDLE',
   VIEWING = 'VIEWING',
@@ -42,7 +43,7 @@ export interface CoachReport {
   strengths: string[];
   weaknesses: string[];
   trainingTips: string[];
-  futureSteps: string[];
+  immediateAction: string; // Replaced futureSteps
 }
 
 export interface ChatMessage {

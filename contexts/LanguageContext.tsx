@@ -10,7 +10,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.6.4';
+const appVersion = process.env.APP_VERSION || '2.6.5';
 
 const translations = {
   en: {
@@ -44,15 +44,41 @@ const translations = {
     "viewAnalytics": "View Full Analytics",
     "intuitionDojo": "Intuition Dojo",
 
+    // Leveling System
+    "level": "Level",
+    "division": "Div",
+    "currentRank": "Current Rank",
+    "nextRank": "Next Rank",
+    "lvl1": "Novice",
+    "lvl2": "Apprentice",
+    "lvl3": "Initiate",
+    "lvl4": "Viewer",
+    "lvl5": "Monitor",
+    "lvl6": "Operator",
+    "lvl7": "Specialist",
+    "lvl8": "Expert",
+    "lvl9": "Oracle",
+
+    // Level Capabilities Descriptions
+    "cap_lvl1": "Establishing the Signal Line. You are learning to distinguish between imagination (AOL) and true sensory signal. Capable of detecting major energetic shifts.",
+    "cap_lvl2": "Basic Contrast Detection. You can perceive fundamental dichotomies: Land vs Water, Man-made vs Natural, Dark vs Light.",
+    "cap_lvl3": "Sensory Data Acquisition. You can consistently record core sensory gestalts: Colors, Temperatures, Smells, and Textures.",
+    "cap_lvl4": "Dimensional Perception. You are beginning to perceive shapes and forms. Capable of sketching basic outlines and spatial relationships.",
+    "cap_lvl5": "Reliable Contact. You can reliably describe the main subject of a target. Suitable for basic practice groups and double-blind trials.",
+    "cap_lvl6": "Operational Competence. You can identify specific objects and their functions. Capable of describing complex scenes with moderate accuracy.",
+    "cap_lvl7": "High-Fidelity Data. You can distinguish between similar objects and describe detailed architectural or mechanical features.",
+    "cap_lvl8": "Expert Precision. Capable of blind operational work. Your sketches often closely match the target's perspective and geometry.",
+    "cap_lvl9": "Mastery. Near-perfect bilocation. You can access deep conceptual data, emotions, and hidden details of the target site.",
+
     // Analytics Modal
     "analyticsTitle": "Performance Analytics",
     "avgScore": "Average Score",
     "bestScore": "Personal Best",
     "totalSessions": "Total Sessions",
-    "futureSteps": "Future Training Path",
-    "futureStepsDesc": "AI-generated milestones to reach your next level.",
+    "currentCapabilities": "Current Capabilities",
+    "currentCapabilitiesDesc": "Based on your rank, here is your assessed operational ability.",
     "close": "Close",
-    "aiCoachPrompt": "Click \"Generate AI Coach Report\" on the dashboard to see your Future Training Path.",
+    "aiCoachPrompt": "Click \"Generate AI Coach Report\" on the dashboard to see your Recommended Action.",
 
     // Chat
     "chatTitle": "Coach Assistant",
@@ -123,6 +149,7 @@ const translations = {
     // Step 4: Review
     "reviewTitle": "Final Review",
     "reviewDesc": "Check your data before submitting to the AI Judge.",
+    "reviewSubmit": "Submit for Analysis",
     "sensoryNotes": "Sensory Notes",
     "noNotes": "No notes recorded.",
     "sketchPreview": "Sketch Preview",
@@ -157,8 +184,9 @@ const translations = {
     "invertSketch": "Invert Sketch",
     "addRemarks": "Add Post-Session Remarks (Optional)",
     "addRemarksDesc": "Describe any issues, clarifications, or thoughts about this result.",
-    "saveRemarks": "Save Remarks",
-    "remarksSaved": "Remarks Saved",
+    "saveRemarks": "Save & Review",
+    "savingReview": "Saving & Recalculating...",
+    "remarksSaved": "Updated!",
 
     // Auth Modal
     "welcomeBackAuth": "Welcome Back",
@@ -214,15 +242,41 @@ const translations = {
     "viewAnalytics": "සම්පූර්ණ විශ්ලේෂණය බලන්න",
     "intuitionDojo": "ඉව පුහුණු අංගනය (Dojo)",
 
+    // Leveling System
+    "level": "මට්ටම",
+    "division": "කාණ්ඩය",
+    "currentRank": "වත්මන් තනතුර",
+    "nextRank": "ඊළඟ තනතුර",
+    "lvl1": "ආධුනික (Novice)",
+    "lvl2": "ආධුනික II (Apprentice)",
+    "lvl3": "ආරම්භක (Initiate)",
+    "lvl4": "නිරීක්ෂක (Viewer)",
+    "lvl5": "අධීක්ෂක (Monitor)",
+    "lvl6": "ක්‍රියාකරු (Operator)",
+    "lvl7": "විශේෂඥ (Specialist)",
+    "lvl8": "ප්‍රවීණ (Expert)",
+    "lvl9": "දිවැස් (Oracle)",
+
+    // Level Capabilities Descriptions
+    "cap_lvl1": "සංඥා මාර්ගය ස්ථාපිත කිරීම. පරිකල්පනය (AOL) සහ සත්‍ය සංවේදක සංඥා අතර වෙනස හඳුනා ගැනීමට ඔබ ඉගෙන ගනිමින් සිටී.",
+    "cap_lvl2": "මූලික වෙනස්කම් හඳුනාගැනීම. ගොඩබිම සහ ජලය, මිනිසා සාදන ලද සහ ස්වභාවික, අඳුරු සහ ආලෝකය වැනි මූලික වෙනස්කම් ඔබට වටහා ගත හැකිය.",
+    "cap_lvl3": "සංවේදක දත්ත ලබා ගැනීම. ඔබට මූලික සංවේදක හැඟීම් අඛණ්ඩව වාර්තා කළ හැකිය: වර්ණ, උෂ්ණත්වය, සුවඳ සහ මතුපිට ස්වභාවය.",
+    "cap_lvl4": "මානමය සංජානනය. ඔබ හැඩතල සහ රූප දැකීමට පටන් ගෙන ඇත. මූලික දළ සටහන් සහ අවකාශීය සම්බන්ධතා ඇඳීමට හැකිය.",
+    "cap_lvl5": "විශ්වාසදායක සම්බන්ධතාවය. ඔබට ඉලක්කයක ප්‍රධාන වස්තුව විශ්වාසදායක ලෙස විස්තර කළ හැකිය. මූලික පුහුණු කණ්ඩායම් සඳහා සුදුසු වේ.",
+    "cap_lvl6": "ක්‍රියාකාරී නිපුණතාවය. ඔබට නිශ්චිත වස්තූන් සහ ඒවායේ ක්‍රියාකාරකම් හඳුනාගත හැකිය. සංකීර්ණ දර්ශන මධ්‍යස්ථ නිරවද්‍යතාවයකින් විස්තර කිරීමට හැකිය.",
+    "cap_lvl7": "ඉහළ විභේදන දත්ත. ඔබට සමාන වස්තූන් අතර වෙනස හඳුනාගත හැකි අතර සවිස්තරාත්මක වාස්තුවිද්‍යාත්මක හෝ යාන්ත්‍රික ලක්ෂණ විස්තර කළ හැකිය.",
+    "cap_lvl8": "විශේෂඥ නිරවද්‍යතාවය. අන්ධ මෙහෙයුම් කටයුතු සඳහා හැකියාව ඇත. ඔබේ සිතුවම් බොහෝ විට ඉලක්කයේ දෘෂ්ටිකෝණය සහ ජ්‍යාමිතිය සමඟ සමීපව ගැලපේ.",
+    "cap_lvl9": "ප්‍රවීණත්වය. පරිපූර්ණ ආසන්න ද්වි-ස්ථානගත වීම. ඔබට ඉලක්ක ස්ථානයේ ගැඹුරු සංකල්පීය දත්ත, හැඟීම් සහ සැඟවුණු විස්තර වෙත පිවිසිය හැකිය.",
+
     // Analytics Modal
     "analyticsTitle": "කාර්ය සාධන විශ්ලේෂණය",
     "avgScore": "සාමාන්‍ය ලකුණු",
     "bestScore": "හොඳම ලකුණු",
     "totalSessions": "මුළු සැසි",
-    "futureSteps": "අනාගත පුහුණු මාර්ගය",
-    "futureStepsDesc": "ඔබේ ඊළඟ මට්ටමට ළඟා වීමට AI ජනනය කළ සන්ධිස්ථාන.",
+    "currentCapabilities": "වත්මන් හැකියාවන්",
+    "currentCapabilitiesDesc": "ඔබේ තරාතිරම මත පදනම්ව, ඔබේ තක්සේරු කළ මෙහෙයුම් හැකියාව මෙන්න.",
     "close": "වසන්න",
-    "aiCoachPrompt": "ඔබේ අනාගත පුහුණු මාර්ගය බැලීමට උපකරණ පුවරුවේ 'AI උපදේශක වාර්තාව' ක්ලික් කරන්න.",
+    "aiCoachPrompt": "ඔබගේ නිර්දේශිත ක්‍රියාව බැලීමට උපකරණ පුවරුවේ 'AI උපදේශක වාර්තාව' ක්ලික් කරන්න.",
 
     // Chat
     "chatTitle": "පුහුණුකරු සහායක",
@@ -293,6 +347,7 @@ const translations = {
     // Step 4: Review
     "reviewTitle": "අවසාන පරීක්ෂාව",
     "reviewDesc": "AI විනිසුරු වෙත ඉදිරිපත් කිරීමට පෙර ඔබේ දත්ත පරීක්ෂා කරන්න.",
+    "reviewSubmit": "විශ්ලේෂණය සඳහා ඉදිරිපත් කරන්න",
     "sensoryNotes": "සංවේදක සටහන්",
     "noNotes": "සටහන් කර නැත.",
     "sketchPreview": "සිතුවම් පෙරදසුන",
@@ -327,8 +382,9 @@ const translations = {
     "invertSketch": "වර්ණ පෙරලන්න",
     "addRemarks": "පසු සැසි සටහන් එක් කරන්න (විකල්ප)",
     "addRemarksDesc": "මෙම ප්‍රතිඵලය ගැන ඕනෑම ගැටලුවක්, පැහැදිලි කිරීමක් හෝ අදහසක් විස්තර කරන්න.",
-    "saveRemarks": "සටහන් සුරකින්න",
-    "remarksSaved": "සටහන් සුරැකිනි",
+    "saveRemarks": "සුරකින්න සහ සමාලෝචනය කරන්න",
+    "savingReview": "සුරැකීම සහ නැවත ගණනය කිරීම...",
+    "remarksSaved": "යාවත්කාලීනයි!",
 
     // Auth Modal
     "welcomeBackAuth": "නැවත සාදරයෙන් පිළිගනිමු",
