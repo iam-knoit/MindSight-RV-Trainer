@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { SessionData } from '../types';
@@ -9,13 +10,17 @@ interface HistoryChartProps {
 
 const HistoryChart: React.FC<HistoryChartProps> = ({ sessions }) => {
   const { t } = useLanguage();
-  const data = sessions.map((s, i) => ({
+  
+  // Filter out sessions that have no score (Open Sessions)
+  const trainingSessions = sessions.filter(s => s.aiScore !== undefined && s.sessionType !== 'OPEN');
+
+  const data = trainingSessions.map((s, i) => ({
     name: `S${i + 1}`,
     score: s.aiScore,
     date: new Date(s.timestamp).toLocaleDateString()
   }));
 
-  if (sessions.length === 0) return <div className="text-slate-500 text-sm">{t('noHistory')}</div>;
+  if (trainingSessions.length === 0) return <div className="text-slate-500 text-sm">{t('noHistory')}</div>;
 
   return (
     <div className="h-48 w-full mt-4">

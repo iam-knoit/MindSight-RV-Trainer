@@ -10,7 +10,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.6.7';
+const appVersion = process.env.APP_VERSION || '2.6.8';
 
 const translations = {
   en: {
@@ -43,6 +43,17 @@ const translations = {
     "totalTime": "Total Training Time",
     "viewAnalytics": "View Full Analytics",
     "intuitionDojo": "Intuition Dojo",
+
+    // Session Modes
+    "selectMode": "Select Session Mode",
+    "modeTraining": "Standard Training",
+    "modeTrainingDesc": "AI generates a blind photo target and scores your accuracy immediately.",
+    "modeOpen": "Open Exploration",
+    "modeOpenDesc": "View a real-world or personal target (e.g., Lost Object, Future Event). No AI scoring.",
+    "enterIntent": "Enter Target Intent (Optional)",
+    "intentPlaceholder": "e.g., Location of missing keys, Tomorrow's Headlines...",
+    "intentDesc": "Describe what you are looking for. This helps you verify your data later.",
+    "startOpenSession": "Start Open Session",
 
     // Leveling System
     "level": "Level",
@@ -164,10 +175,12 @@ const translations = {
     "noSketch": "No sketch drawn",
     "editData": "Edit Data",
     "submitAnalysis": "SUBMIT FOR ANALYSIS",
+    "saveLog": "Save to Log (No AI)",
 
     // Analyzing
     "analyzingTitle": "Analyzing Session...",
     "analyzingDesc": "Comparing your sketch with the blind target.",
+    "savingDesc": "Encrypting and saving your session data...",
     "analysisFailed": "Analysis Failed",
     "analysisErrorDesc": "AI හට විශ්ලේෂණය සම්පූර්ණ කිරීමට නොහැකි විය. කරුණාකර ඔබගේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
     "tryAgain": "Try Again",
@@ -178,8 +191,12 @@ const translations = {
     "accuracyScore": "ACCURACY SCORE",
     "nextSession": "Next Session",
     "actualTarget": "ACTUAL TARGET",
+    "targetInaccessible": "TARGET INACCESSIBLE",
+    "targetInaccessibleDesc": "This was an open session. No visual feedback is available.",
+    "targetIntent": "Target Intent",
     "yourSketch": "YOUR SKETCH",
     "aiAnalysis": "AI Analysis",
+    "noAnalysis": "No AI Analysis performed for this session type.",
     "trendTitle": "Performance Trend",
     "accuracyTrend": "Accuracy Trend",
     "duration": "Duration",
@@ -249,6 +266,17 @@ const translations = {
     "totalTime": "මුළු පුහුණු කාලය",
     "viewAnalytics": "සම්පූර්ණ විශ්ලේෂණය බලන්න",
     "intuitionDojo": "ඉව පුහුණු අංගනය (Dojo)",
+
+    // Session Modes
+    "selectMode": "සැසි මාදිලිය තෝරන්න",
+    "modeTraining": "සම්මත පුහුණුව",
+    "modeTrainingDesc": "AI විසින් අන්ධ ඡායාරූප ඉලක්කයක් ජනනය කර ඔබගේ නිරවද්‍යතාවය ලකුණු කරයි.",
+    "modeOpen": "විවෘත ගවේෂණය (Open Exploration)",
+    "modeOpenDesc": "සැබෑ ලෝකයේ ඉලක්කයක් බලන්න (උදා: නැතිවූ වස්තුව, අනාගත සිදුවීම). AI ලකුණු ලබා දීමක් සිදු නොවේ.",
+    "enterIntent": "ඉලක්ක අරමුණ ඇතුළත් කරන්න (විකල්ප)",
+    "intentPlaceholder": "උදා: නැතිවූ යතුරු ඇති ස්ථානය...",
+    "intentDesc": "ඔබ සොයන දේ විස්තර කරන්න. මෙය පසුව ඔබගේ දත්ත තහවුරු කිරීමට උපකාරී වේ.",
+    "startOpenSession": "විවෘත සැසිය අරඹන්න",
 
     // Leveling System
     "level": "මට්ටම",
@@ -370,10 +398,12 @@ const translations = {
     "noSketch": "සිතුවමක් නැත",
     "editData": "දත්ත වෙනස් කරන්න",
     "submitAnalysis": "විශ්ලේෂණය සඳහා ඉදිරිපත් කරන්න",
+    "saveLog": "ලොගයට සුරකින්න (AI නැත)",
 
     // Analyzing
     "analyzingTitle": "සැසිය විශ්ලේෂණය කරමින්...",
     "analyzingDesc": "ඔබේ සිතුවම අන්ධ ඉලක්කය සමඟ සසඳමින්.",
+    "savingDesc": "ඔබගේ සැසි දත්ත සංකේතනය කර සුරකිමින්...",
     "analysisFailed": "විශ්ලේෂණය අසාර්ථක විය",
     "analysisErrorDesc": "AI හට විශ්ලේෂණය සම්පූර්ණ කිරීමට නොහැකි විය. කරුණාකර ඔබගේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
     "tryAgain": "නැවත උත්සාහ කරන්න",
@@ -384,8 +414,12 @@ const translations = {
     "accuracyScore": "නිරවද්‍යතා ලකුණු",
     "nextSession": "ඊළඟ සැසිය",
     "actualTarget": "සැබෑ ඉලක්කය",
+    "targetInaccessible": "ඉලක්කය ප්‍රවේශ විය නොහැක",
+    "targetInaccessibleDesc": "මෙය විවෘත සැසියකි. දෘශ්‍ය ප්‍රතිපෝෂණ ලබා ගත නොහැක.",
+    "targetIntent": "ඉලක්ක අරමුණ",
     "yourSketch": "ඔබේ සිතුවම",
     "aiAnalysis": "AI විශ්ලේෂණය",
+    "noAnalysis": "මෙම සැසි වර්ගය සඳහා AI විශ්ලේෂණයක් සිදු නොකෙරේ.",
     "trendTitle": "කාර්ය සාධන ප්‍රවණතාවය",
     "accuracyTrend": "නිරවද්‍යතා ප්‍රවණතාවය",
     "duration": "කාලය",

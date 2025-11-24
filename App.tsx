@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown, Sprout, Feather, Radio, Activity, Eraser, CheckCircle2 } from 'lucide-react';
-import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats } from './types';
+import { Eye, RefreshCw, Play, CheckCircle, Brain, Image as ImageIcon, Sparkles, ArrowRight, ArrowLeft, ShieldCheck, Trash2, History, LogIn, LogOut, User as UserIcon, AlertTriangle, X, Copy, Server, Mail, Lock, TrendingUp, Lightbulb, Check, XCircle, Globe, Wind, Home, MessageSquareText, BookOpen, Timer, Clock, BarChart3, Layers, Sliders, Contrast, Zap, FileText, Save, Volume2, VolumeX, Award, Medal, Crown, Sprout, Feather, Radio, Activity, Eraser, CheckCircle2, Globe2, Compass } from 'lucide-react';
+import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats, SessionType } from './types';
 import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore } from './services/geminiService';
 import { auth, loginWithEmail, registerWithEmail, logOut, saveSessionToCloud, subscribeToHistory, subscribeToIntuitionStats, updateSessionData } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -70,6 +70,103 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, title, me
     </div>
   );
 };
+
+interface ModeSelectionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectTraining: () => void;
+  onSelectOpen: (intent: string) => void;
+}
+
+const ModeSelectionModal: React.FC<ModeSelectionModalProps> = ({ isOpen, onClose, onSelectTraining, onSelectOpen }) => {
+  const { t } = useLanguage();
+  const [selectedMode, setSelectedMode] = useState<SessionType>('TRAINING');
+  const [intent, setIntent] = useState('');
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+       <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative animate-in slide-in-from-bottom-8 duration-300">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10">
+            <X size={24} />
+          </button>
+
+          <div className="p-8 pb-4 text-center">
+            <h2 className="text-3xl font-bold text-white mb-2">{t('selectMode')}</h2>
+            <p className="text-slate-400">Choose your protocol for this session.</p>
+          </div>
+
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+             {/* Standard Training Card */}
+             <button
+               onClick={() => setSelectedMode('TRAINING')}
+               className={`relative p-6 rounded-2xl border-2 transition-all duration-200 text-left flex flex-col gap-4 group
+                 ${selectedMode === 'TRAINING' ? 'bg-blue-900/20 border-blue-500 ring-1 ring-blue-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-500'}
+               `}
+             >
+               <div className={`p-3 rounded-xl w-fit ${selectedMode === 'TRAINING' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                 <Brain size={24} />
+               </div>
+               <div>
+                 <h3 className={`text-lg font-bold mb-2 ${selectedMode === 'TRAINING' ? 'text-white' : 'text-slate-300'}`}>{t('modeTraining')}</h3>
+                 <p className="text-sm text-slate-400 leading-relaxed">{t('modeTrainingDesc')}</p>
+               </div>
+               {selectedMode === 'TRAINING' && <CheckCircle2 className="absolute top-4 right-4 text-blue-500" />}
+             </button>
+
+             {/* Open Exploration Card */}
+             <button
+               onClick={() => setSelectedMode('OPEN')}
+               className={`relative p-6 rounded-2xl border-2 transition-all duration-200 text-left flex flex-col gap-4 group
+                 ${selectedMode === 'OPEN' ? 'bg-purple-900/20 border-purple-500 ring-1 ring-purple-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-500'}
+               `}
+             >
+               <div className={`p-3 rounded-xl w-fit ${selectedMode === 'OPEN' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                 <Compass size={24} />
+               </div>
+               <div>
+                 <h3 className={`text-lg font-bold mb-2 ${selectedMode === 'OPEN' ? 'text-white' : 'text-slate-300'}`}>{t('modeOpen')}</h3>
+                 <p className="text-sm text-slate-400 leading-relaxed">{t('modeOpenDesc')}</p>
+               </div>
+               {selectedMode === 'OPEN' && <CheckCircle2 className="absolute top-4 right-4 text-purple-500" />}
+             </button>
+          </div>
+
+          {/* Configuration Area */}
+          <div className="px-8 pb-8 pt-0">
+             {selectedMode === 'OPEN' && (
+               <div className="mb-6 animate-in slide-in-from-top-4">
+                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">{t('enterIntent')}</label>
+                 <input 
+                   type="text"
+                   value={intent}
+                   onChange={(e) => setIntent(e.target.value)}
+                   placeholder={t('intentPlaceholder')}
+                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                 />
+                 <p className="text-xs text-slate-500 mt-2">{t('intentDesc')}</p>
+               </div>
+             )}
+
+             <button
+               onClick={() => selectedMode === 'TRAINING' ? onSelectTraining() : onSelectOpen(intent)}
+               disabled={selectedMode === 'OPEN' && !intent.trim()}
+               className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all
+                 ${selectedMode === 'TRAINING' 
+                   ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20' 
+                   : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed'}
+               `}
+             >
+               {selectedMode === 'TRAINING' ? <Play size={20} /> : <Compass size={20} />}
+               {selectedMode === 'TRAINING' ? t('startSession') : t('startOpenSession')}
+             </button>
+          </div>
+       </div>
+    </div>
+  );
+};
+
 
 interface Step1Props {
   coordinate: string;
@@ -433,9 +530,10 @@ interface Step4Props {
   sketch: string | null;
   onSubmit: () => void;
   onBack: () => void;
+  sessionType: SessionType;
 }
 
-const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack }) => {
+const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack, sessionType }) => {
   const { t } = useLanguage();
   return (
     <div className="max-w-4xl mx-auto w-full space-y-6 animate-in slide-in-from-right-8 duration-300">
@@ -476,7 +574,8 @@ const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack }) 
           onClick={onSubmit} 
           className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-[0_0_30px_-5px_rgba(22,163,74,0.4)]"
         >
-          <ShieldCheck size={20} /> {t('submitAnalysis')}
+          {sessionType === 'TRAINING' ? <ShieldCheck size={20} /> : <Save size={20} />}
+          {sessionType === 'TRAINING' ? t('submitAnalysis') : t('saveLog')}
         </button>
       </div>
     </div>
@@ -626,11 +725,13 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [state, setState] = useState<SessionState>(SessionState.IDLE);
+  const [sessionType, setSessionType] = useState<SessionType>('TRAINING');
   const [step, setStep] = useState(1);
   const [sessionNumber, setSessionNumber] = useState(1);
   
   const [coordinate, setCoordinate] = useState<string>('');
   const [target, setTarget] = useState<TargetImage | null>(null);
+  const [targetIntent, setTargetIntent] = useState<string>('');
   const [userNotes, setUserNotes] = useState('');
   const [userSketch, setUserSketch] = useState<string | null>(null);
   
@@ -642,6 +743,7 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false); 
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false); 
+  const [showModeSelection, setShowModeSelection] = useState(false);
 
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [analyzingHistory, setAnalyzingHistory] = useState(false);
@@ -677,11 +779,14 @@ function App() {
 
   // --- LEVELING SYSTEM LOGIC ---
   const calculateLevel = (sessions: SessionData[]) => {
-    if (sessions.length === 0) {
+    // Filter out sessions without scores (Open Sessions)
+    const validSessions = sessions.filter(s => s.aiScore !== undefined);
+    
+    if (validSessions.length === 0) {
       return { level: 1, title: 'lvl1', division: null, progress: 0, nextThreshold: 20 };
     }
     
-    const avgScore = Math.round(sessions.reduce((acc, s) => acc + s.aiScore, 0) / sessions.length);
+    const avgScore = Math.round(validSessions.reduce((acc, s) => acc + (s.aiScore || 0), 0) / validSessions.length);
 
     let level = 1;
     let title = 'lvl1';
@@ -762,7 +867,9 @@ function App() {
     }
     setAnalyzingHistory(true);
     try {
-      const report = await generateCoachReport(history, language);
+      // Filter out open sessions for coaching context
+      const trainingSessions = history.filter(s => s.sessionType !== 'OPEN');
+      const report = await generateCoachReport(trainingSessions, language);
       setCoachReport(report);
     } catch (e) {
       console.error(e);
@@ -777,32 +884,32 @@ function App() {
       setIsResetting(false); // Initially false, user triggers it
   };
 
-  const startSession = async () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return; 
-    }
+  // Called after mode selection modal
+  const handleStartSession = (mode: SessionType, intent: string = '') => {
+    setShowModeSelection(false);
+    setSessionType(mode);
+    setTargetIntent(intent);
     
+    if (mode === 'TRAINING') {
+      initializeTrainingSession();
+    } else {
+      initializeOpenSession();
+    }
+  };
+
+  const initializeTrainingSession = async () => {
     setSessionNumber(history.length + 1);
     setIsLoading(true);
     setLoadingMessage(t('startSessionLoading'));
     sessionRef.current = true; 
     startTimeRef.current = Date.now(); 
     
-    setViewMode('split');
-    setOverlayOpacity(0.5);
-    setInvertSketch(false);
-    setRemarksInput('');
-    setRemarksSaved(false);
+    resetSessionState();
 
     try {
       const newCoord = generateCoordinate();
       setCoordinate(newCoord);
       
-      setUserNotes('');
-      setUserSketch(null);
-      setStep(1);
-
       const targetData = await generateTargetImage();
       setTarget(targetData);
       
@@ -816,6 +923,31 @@ function App() {
       setIsLoading(false);
       setLoadingMessage(t('startSession'));
     }
+  };
+
+  const initializeOpenSession = () => {
+    setSessionNumber(history.length + 1);
+    sessionRef.current = true;
+    startTimeRef.current = Date.now();
+    
+    resetSessionState();
+    setTarget(null); // No target image in Open mode
+
+    const newCoord = generateCoordinate();
+    setCoordinate(newCoord);
+    
+    setState(SessionState.VIEWING);
+  };
+
+  const resetSessionState = () => {
+    setViewMode('split');
+    setOverlayOpacity(0.5);
+    setInvertSketch(false);
+    setRemarksInput('');
+    setRemarksSaved(false);
+    setUserNotes('');
+    setUserSketch(null);
+    setStep(1);
   };
 
   const goHome = () => {
@@ -837,25 +969,54 @@ function App() {
   };
 
   const submitSession = async () => {
-    if (!target || !user) return;
+    if (!user) return;
     setAnalysisError(null);
+
+    // Common data construction
+    const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    const baseSessionData: SessionData = {
+        id: Date.now().toString(),
+        sessionType: sessionType,
+        coordinate,
+        timestamp: Date.now(),
+        userSketchBase64: userSketch,
+        userNotes,
+        durationSeconds: durationSeconds,
+        targetIntent: targetIntent
+    };
+
+    // BRANCH: Open Session (No AI Analysis)
+    if (sessionType === 'OPEN') {
+      setState(SessionState.ANALYZING);
+      setLoadingMessage(t('savingDesc'));
+      try {
+        setCurrentSession(baseSessionData);
+        await saveSessionToCloud(user.uid, baseSessionData);
+        if (sessionRef.current) {
+           setState(SessionState.FEEDBACK);
+        }
+      } catch (e) {
+        console.error("Open session save failed", e);
+        setAnalysisError(t('analysisFailed'));
+      }
+      return;
+    }
+
+    // BRANCH: Training Session (AI Analysis)
+    if (!target) return;
     setState(SessionState.ANALYZING);
     try {
       const result = await analyzeSession(target.base64, userSketch, userNotes, language);
       if (!sessionRef.current) return;
-      const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      
       const newSession: SessionData = {
-        id: Date.now().toString(),
-        coordinate,
-        timestamp: Date.now(),
+        ...baseSessionData,
         targetImageUrl: target.url,
         targetImageBase64: target.base64,
-        userSketchBase64: userSketch,
-        userNotes,
         aiScore: result.score,
         aiFeedback: result.feedback,
-        durationSeconds: durationSeconds
       };
+      
       setCurrentSession(newSession);
       await saveSessionToCloud(user.uid, newSession);
       if (sessionRef.current) {
@@ -873,20 +1034,21 @@ function App() {
     if (!user || !currentSession || !remarksInput.trim()) return;
     setIsSavingRemarks(true);
     try {
-        // 1. Recalculate score based on remarks
-        const recalculated = await recalculateScore(currentSession, remarksInput, language);
-        
-        // 2. Prepare updated data
-        const updatedData: Partial<SessionData> = {
+        let updatedData: Partial<SessionData> = {
             postSessionRemarks: remarksInput,
-            aiScore: recalculated.score,
-            aiFeedback: recalculated.feedback
         };
 
-        // 3. Update Cloud
+        // Only recalculate score if it was a training session with a target
+        if (currentSession.sessionType === 'TRAINING' && currentSession.targetImageBase64) {
+             const recalculated = await recalculateScore(currentSession, remarksInput, language);
+             updatedData.aiScore = recalculated.score;
+             updatedData.aiFeedback = recalculated.feedback;
+        }
+
+        // Update Cloud
         await updateSessionData(user.uid, currentSession.id, updatedData);
         
-        // 4. Update Local State
+        // Update Local State
         setCurrentSession(prev => prev ? { ...prev, ...updatedData } : null);
         
         setRemarksSaved(true);
@@ -933,6 +1095,11 @@ function App() {
         <div className="flex items-center gap-6">
           {state !== SessionState.IDLE && state !== SessionState.DOJO && state !== SessionState.RESET && (
              <div className="hidden md:flex items-center gap-4">
+               {sessionType === 'OPEN' && (
+                 <div className="bg-purple-900/30 px-3 py-2 rounded-lg border border-purple-500/30 font-mono text-xs font-bold text-purple-300 flex items-center gap-2">
+                    <Compass size={14} /> OPEN MODE
+                 </div>
+               )}
                <div className="bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 font-mono text-sm font-bold text-blue-400">
                   {t('session')} #{sessionNumber}
                </div>
@@ -1009,9 +1176,14 @@ function App() {
      // Animation handler
      const handleResetAction = () => {
          setIsResetting(true);
-         // After animation completes, start the new session
+         // After animation completes, start the new session based on previous mode selection
          setTimeout(() => {
-             startSession();
+             // For simplicity, repeat the previous mode. User can go home to switch.
+             if (sessionType === 'TRAINING') {
+                 initializeTrainingSession();
+             } else {
+                 initializeOpenSession();
+             }
          }, 3000);
      };
 
@@ -1041,7 +1213,7 @@ function App() {
                    </button>
                    
                    <button 
-                       onClick={() => startSession()}
+                       onClick={() => sessionType === 'TRAINING' ? initializeTrainingSession() : initializeOpenSession()}
                        className="text-slate-600 text-sm hover:text-slate-400 block mx-auto mt-4"
                    >
                        Skip
@@ -1086,7 +1258,7 @@ function App() {
             {user ? (
             <button
                 type="button"
-                onClick={startSession}
+                onClick={() => setShowModeSelection(true)}
                 disabled={isLoading}
                 className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -1289,7 +1461,15 @@ function App() {
               </button>
            </div>
          </div>
-         {step === 4 && <Step4Review notes={userNotes} sketch={userSketch} onSubmit={submitSession} onBack={prevStep} />}
+         {step === 4 && (
+            <Step4Review 
+                notes={userNotes} 
+                sketch={userSketch} 
+                onSubmit={submitSession} 
+                onBack={prevStep}
+                sessionType={sessionType}
+            />
+         )}
       </div>
     </div>
   );
@@ -1327,32 +1507,41 @@ function App() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-500">
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-blue-500/30 blur-xl rounded-full animate-pulse"></div>
-          <RefreshCw className="w-16 h-16 text-blue-400 animate-spin relative z-10" />
+          {sessionType === 'OPEN' ? (
+              <Save className="w-16 h-16 text-purple-400 animate-bounce relative z-10" />
+          ) : (
+              <RefreshCw className="w-16 h-16 text-blue-400 animate-spin relative z-10" />
+          )}
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">{t('analyzingTitle')}</h2>
-        <p className="text-slate-400">{t('analyzingDesc')}</p>
+        <h2 className="text-2xl font-bold text-white mb-2">{sessionType === 'OPEN' ? 'Saving Session...' : t('analyzingTitle')}</h2>
+        <p className="text-slate-400">{sessionType === 'OPEN' ? t('savingDesc') : t('analyzingDesc')}</p>
       </div>
     );
   };
 
   const renderFeedback = () => {
     if (!currentSession) return null;
-    const isLowScore = currentSession.aiScore < 50;
+    const isLowScore = currentSession.aiScore !== undefined && currentSession.aiScore < 50;
+    const isOpenSession = currentSession.sessionType === 'OPEN';
 
     return (
       <div className="max-w-6xl mx-auto p-4 animate-in slide-in-from-bottom-8 duration-700">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <CheckCircle className="text-green-500" />
+            <CheckCircle className={isOpenSession ? "text-purple-500" : "text-green-500"} />
             {t('feedbackPhase')}
           </h2>
           <div className="flex gap-4">
-             <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                <span className="text-slate-400 text-sm mr-2">{t('accuracyScore')}</span>
-                <span className={`font-bold text-xl ${currentSession.aiScore >= 70 ? 'text-green-400' : currentSession.aiScore >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
-                  {currentSession.aiScore}%
-                </span>
-             </div>
+             {/* Only show score if it exists */}
+             {!isOpenSession && currentSession.aiScore !== undefined && (
+                <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                    <span className="text-slate-400 text-sm mr-2">{t('accuracyScore')}</span>
+                    <span className={`font-bold text-xl ${currentSession.aiScore >= 70 ? 'text-green-400' : currentSession.aiScore >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {currentSession.aiScore}%
+                    </span>
+                </div>
+             )}
+             
              {currentSession.durationSeconds !== undefined && (
                <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 flex items-center gap-2 text-slate-300">
                  <Timer size={16} className="text-blue-400" />
@@ -1398,59 +1587,77 @@ function App() {
           </div>
         )}
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-6">
-           <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-wider">
-              <Layers size={16} className="text-blue-400" /> {t('visualTools')}
-           </div>
-           <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
-              <button 
-                onClick={() => setViewMode('split')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'split' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
-              >
-                {t('modeSplit')}
-              </button>
-              <button 
-                onClick={() => setViewMode('overlay')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'overlay' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
-              >
-                {t('modeOverlay')}
-              </button>
-           </div>
-           {viewMode === 'overlay' && (
-             <div className="flex items-center gap-4 animate-in fade-in duration-300">
-                <div className="flex items-center gap-2">
-                   <Sliders size={14} className="text-slate-500" />
-                   <span className="text-xs text-slate-400">{t('opacity')}</span>
-                   <input 
-                     type="range" 
-                     min="0" 
-                     max="100" 
-                     value={overlayOpacity * 100} 
-                     onChange={(e) => setOverlayOpacity(parseInt(e.target.value) / 100)}
-                     className="w-24 accent-blue-500"
-                   />
-                </div>
+        {/* Visual Analysis Toolbar (Only for Training) */}
+        {!isOpenSession && (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-wider">
+                <Layers size={16} className="text-blue-400" /> {t('visualTools')}
+            </div>
+            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
                 <button 
-                  onClick={() => setInvertSketch(!invertSketch)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${invertSketch ? 'bg-blue-900/30 border-blue-500/50 text-blue-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
+                    onClick={() => setViewMode('split')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'split' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
                 >
-                   <Contrast size={14} /> {t('invertSketch')}
+                    {t('modeSplit')}
                 </button>
-             </div>
-           )}
-        </div>
+                <button 
+                    onClick={() => setViewMode('overlay')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'overlay' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                    {t('modeOverlay')}
+                </button>
+            </div>
+            {viewMode === 'overlay' && (
+                <div className="flex items-center gap-4 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2">
+                    <Sliders size={14} className="text-slate-500" />
+                    <span className="text-xs text-slate-400">{t('opacity')}</span>
+                    <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={overlayOpacity * 100} 
+                        onChange={(e) => setOverlayOpacity(parseInt(e.target.value) / 100)}
+                        className="w-24 accent-blue-500"
+                    />
+                    </div>
+                    <button 
+                    onClick={() => setInvertSketch(!invertSketch)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${invertSketch ? 'bg-blue-900/30 border-blue-500/50 text-blue-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
+                    >
+                    <Contrast size={14} /> {t('invertSketch')}
+                    </button>
+                </div>
+            )}
+            </div>
+        )}
+        
         {viewMode === 'split' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div className="space-y-2">
               <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
-                {t('actualTarget')}
+                {isOpenSession ? t('targetInaccessible') : t('actualTarget')}
               </div>
-              <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3]">
-                <img 
-                  src={currentSession.targetImageUrl} 
-                  alt="Target" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+              <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3] bg-slate-900 flex items-center justify-center flex-col">
+                {isOpenSession || !currentSession.targetImageUrl ? (
+                    <div className="text-center p-6">
+                        <Lock size={48} className="text-slate-600 mx-auto mb-4" />
+                        <p className="text-slate-400 font-bold">{t('targetInaccessible')}</p>
+                        <p className="text-slate-500 text-sm mt-2">{t('targetInaccessibleDesc')}</p>
+                        {currentSession.targetIntent && (
+                            <div className="mt-4 bg-purple-900/20 px-4 py-2 rounded-lg border border-purple-500/30 text-purple-300">
+                                <span className="text-xs uppercase font-bold text-purple-400 block mb-1">{t('targetIntent')}</span>
+                                "{currentSession.targetIntent}"
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <img 
+                    src={currentSession.targetImageUrl} 
+                    alt="Target" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                )}
               </div>
             </div>
             <div className="space-y-2">
@@ -1467,13 +1674,16 @@ function App() {
             </div>
           </div>
         ) : (
+          /* OVERLAY MODE (Only for Training) */
           <div className="w-full max-w-3xl mx-auto mb-8 animate-in zoom-in-95 duration-300">
              <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
-                <img 
-                  src={currentSession.targetImageUrl} 
-                  alt="Target" 
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+                {currentSession.targetImageUrl && (
+                    <img 
+                    src={currentSession.targetImageUrl} 
+                    alt="Target" 
+                    className="absolute inset-0 w-full h-full object-cover"
+                    />
+                )}
                 {currentSession.userSketchBase64 && (
                   <img 
                     src={currentSession.userSketchBase64} 
@@ -1526,7 +1736,7 @@ function App() {
              <Sparkles size={20} /> {t('aiAnalysis')}
            </h3>
            <p className="text-lg text-slate-300 leading-relaxed whitespace-pre-wrap">
-             {currentSession.aiFeedback}
+             {currentSession.aiFeedback || <span className="italic text-slate-500">{t('noAnalysis')}</span>}
            </p>
         </div>
         <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
@@ -1548,6 +1758,12 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 font-sans selection:bg-blue-500/30">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <ModeSelectionModal 
+        isOpen={showModeSelection} 
+        onClose={() => setShowModeSelection(false)} 
+        onSelectTraining={() => handleStartSession('TRAINING')}
+        onSelectOpen={(intent) => handleStartSession('OPEN', intent)}
+      />
       <ConfirmationModal 
         isOpen={showExitConfirm}
         title="Exit Session?"

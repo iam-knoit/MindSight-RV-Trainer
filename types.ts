@@ -8,18 +8,28 @@ export enum SessionState {
   RESET = 'RESET', // New state for Mental Reset
 }
 
+export type SessionType = 'TRAINING' | 'OPEN';
+
 export interface SessionData {
   id: string;
+  sessionType: SessionType; // New field to distinguish mode
   coordinate: string;
   timestamp: number;
-  targetImageUrl: string;
-  targetImageBase64: string;
+  
+  // Target data is optional for OPEN sessions
+  targetImageUrl?: string;
+  targetImageBase64?: string;
+  targetIntent?: string; // What the user is looking for (e.g. "Lost Keys")
+
   userSketchBase64: string | null;
   userNotes: string;
-  aiScore: number;
-  aiFeedback: string;
+  
+  // AI Data is optional for OPEN sessions
+  aiScore?: number;
+  aiFeedback?: string;
+  
   durationSeconds?: number;
-  postSessionRemarks?: string; // New field for user comments after result
+  postSessionRemarks?: string; 
 }
 
 export interface IntuitionStats {
@@ -44,7 +54,7 @@ export interface CoachReport {
   strengths: string[];
   weaknesses: string[];
   trainingTips: string[];
-  immediateAction: string; // Replaced futureSteps
+  immediateAction: string; 
 }
 
 export interface ChatMessage {
