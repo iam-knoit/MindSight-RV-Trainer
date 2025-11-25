@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Eraser, Pen, Trash2, Undo } from 'lucide-react';
+import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SketchPadProps {
@@ -13,6 +14,7 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
   const [lineWidth, setLineWidth] = useState(2);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Initialize canvas
   useEffect(() => {
@@ -108,8 +110,8 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full h-full">
-      <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700">
+    <div className={`flex flex-col gap-2 transition-all duration-300 ${isExpanded ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'w-full h-full'}`}>
+      <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700 shadow-lg">
         <div className="flex gap-2">
           <button
             onClick={() => setTool('pen')}
@@ -135,16 +137,25 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
             title="Brush Size"
           />
         </div>
-        <button
-          onClick={clearCanvas}
-          className="p-2 text-red-400 hover:bg-red-900/30 hover:text-red-300 rounded-md transition-colors"
-          title={t('clearCanvas')}
-        >
-          <Trash2 size={18} />
-        </button>
+        <div className="flex gap-2">
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className={`p-2 rounded-md transition-colors ${isExpanded ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+                title={isExpanded ? t('shrinkCanvas') : t('expandCanvas')}
+            >
+                {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            </button>
+            <button
+            onClick={clearCanvas}
+            className="p-2 text-red-400 hover:bg-red-900/30 hover:text-red-300 rounded-md transition-colors"
+            title={t('clearCanvas')}
+            >
+            <Trash2 size={18} />
+            </button>
+        </div>
       </div>
       
-      <div className="relative flex-grow w-full bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none">
+      <div className={`relative flex-grow w-full bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none ${isExpanded ? 'shadow-2xl' : ''}`}>
         <canvas
           ref={canvasRef}
           width={800}
@@ -159,9 +170,11 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
           onTouchEnd={stopDrawing}
         />
       </div>
-      <div className="text-xs text-slate-500 text-center">
-        {t('sketchInstruction')}
-      </div>
+      {!isExpanded && (
+        <div className="text-xs text-slate-500 text-center">
+            {t('sketchInstruction')}
+        </div>
+      )}
     </div>
   );
 };

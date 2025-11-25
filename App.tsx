@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, subscribeToHistory, saveSessionToCloud, updateSessionRemarks, updateIntuitionStats, subscribeToIntuitionStats, deleteSession, updateSessionData } from './services/firebase';
+import { auth, subscribeToHistory, saveSessionToCloud, updateSessionRemarks, updateIntuitionStats, subscribeToIntuitionStats, deleteSession, updateSessionData, logOut } from './services/firebase';
 import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore, analyzeOpenSession, generateVisualReconstruction } from './services/geminiService';
 import { SessionState, SessionData, CoachReport, IntuitionStats, SessionType } from './types';
 import { useLanguage } from './contexts/LanguageContext';
-import { Brain, Sparkles, Image as ImageIcon, CheckCircle, XCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { Brain, Sparkles, Image as ImageIcon, CheckCircle, XCircle, ArrowLeft, ArrowRight, Loader2, Eye, LogIn, LogOut } from 'lucide-react';
 
 import DashboardView from './components/views/DashboardView';
 import FeedbackView from './components/views/FeedbackView';
@@ -23,7 +24,7 @@ import SessionLogModal from './components/modals/SessionLogModal';
 import ModeSelectionModal from './components/modals/ModeSelectionModal';
 import ConfirmationModal from './components/modals/ConfirmationModal';
 
-import { calculateLevel } from './utils/leveling';
+import { calculateLevel, getRankStyle } from './utils/leveling';
 
 const App: React.FC = () => {
   const { t } = useLanguage();
@@ -84,6 +85,9 @@ const App: React.FC = () => {
     });
     return () => unsubscribeAuth();
   }, []);
+
+  // Calculate Current Rank
+  const currentRank = calculateLevel(history);
 
   // Check for Rank Up
   useEffect(() => {
@@ -309,6 +313,65 @@ const App: React.FC = () => {
         
         {rankToast && <RankToast {...rankToast} onClose={() => setRankToast(null)} isCalibrationComplete={false} />}
         {showCalibrationToast && <RankToast level={0} title="calibrationComplete" division={null} onClose={() => setShowCalibrationToast(false)} isCalibrationComplete={true} />}
+
+        {/* --- APP HEADER --- */}
+        {sessionState === SessionState.IDLE && (
+          <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+            <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-600 p-2 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.3)]">
+                  <Eye className="text-white" size={20} />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
+                    {t('appTitle')}
+                  </h1>
+                  <p className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
+                    {t('appSubtitle')}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                {user && (
+                  <div className="hidden sm:flex items-center gap-3 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700">
+                    {/* Rank Badge or Loading State */}
+                    {!isHistoryLoaded ? (
+                      <div className="w-24 h-5 bg-slate-700 rounded animate-pulse"></div>
+                    ) : currentRank.isRanked ? (
+                      <div className={`flex items-center gap-2 text-xs font-bold ${getRankStyle(currentRank.level).color}`}>
+                          <div className={`w-2 h-2 rounded-full ${getRankStyle(currentRank.level).bg.replace('/10','')} animate-pulse`}></div>
+                          <span className="uppercase tracking-wider">{t(currentRank.title)} {currentRank.division || 'I'}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                          <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></div>
+                          <span className="uppercase tracking-wider">{t('calibrating')}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {user ? (
+                  <button 
+                    onClick={logOut} 
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                    title={t('logout')}
+                  >
+                    <LogOut size={20} />
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setShowAuth(true)} 
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-all"
+                  >
+                    <LogIn size={16} /> <span className="hidden sm:inline">{t('login')}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </header>
+        )}
 
         {/* --- MAIN VIEWS --- */}
 

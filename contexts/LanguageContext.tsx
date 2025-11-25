@@ -1,3 +1,4 @@
+
 // ... keep imports
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
@@ -177,6 +178,8 @@ const translations = {
     "sketchReviewBtn": "Review Session",
     "sketchInstruction": "Use your mouse or finger to sketch your impressions.",
     "clearCanvas": "Clear All",
+    "expandCanvas": "Maximize Canvas",
+    "shrinkCanvas": "Minimize Canvas",
     "reviewTitle": "Final Review",
     "reviewDesc": "Check your data before submitting to the AI Judge.",
     "reviewSubmit": "Submit for Analysis",
