@@ -73,7 +73,7 @@ const translations = {
     "modeTrainingDesc": "AI generates a blind photo target and scores your accuracy immediately.",
     "modeOpen": "Open Exploration",
     "modeOpenDesc": "View a real-world or personal target (e.g., Lost Object, Future Event). No AI scoring.",
-    "enterIntent": "Enter Target Intent (Optional)",
+    "enterIntent": "Enter Target Intent",
     "intentPlaceholder": "e.g., Location of missing keys, Tomorrow's Headlines...",
     "intentDesc": "Describe what you are looking for. This helps you verify your data later.",
     "startOpenSession": "Start Open Session",
