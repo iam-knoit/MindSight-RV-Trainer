@@ -53,6 +53,7 @@ const App: React.FC = () => {
   
   const [rankToast, setRankToast] = useState<{level: number, title: string, division: string | null} | null>(null);
   const [showCalibrationToast, setShowCalibrationToast] = useState(false);
+  const [isDojoLocked, setIsDojoLocked] = useState(false);
 
   const [isSavingRemarks, setIsSavingRemarks] = useState(false);
   const [remarksSaved, setRemarksSaved] = useState(false);
@@ -286,12 +287,21 @@ const App: React.FC = () => {
     }
   };
 
+  const handleEnterDojo = () => {
+      setIsDojoLocked(false);
+      setSessionState(SessionState.DOJO);
+  };
+
   const handleCalibrationRequired = () => {
+    setIsDojoLocked(true);
     setSessionState(SessionState.DOJO);
   };
 
   const handleDojoComplete = () => {
-      setShowCalibrationToast(true);
+      if (isDojoLocked) {
+          setShowCalibrationToast(true);
+          setIsDojoLocked(false);
+      }
       setSessionState(SessionState.IDLE);
       setCurrentSession(null);
   };
@@ -388,7 +398,7 @@ const App: React.FC = () => {
                 onShowAnalytics={() => setShowAnalytics(true)}
                 onShowChat={() => setShowChat(true)}
                 onRunCoachAnalysis={handleRunCoach}
-                onEnterDojo={() => setSessionState(SessionState.DOJO)}
+                onEnterDojo={handleEnterDojo}
                 onShowSessionLog={() => setShowLog(true)}
                 isHistoryLoaded={isHistoryLoaded}
             />
@@ -487,12 +497,12 @@ const App: React.FC = () => {
             <IntuitionDojo 
                 onClose={handleDojoComplete} 
                 initialStats={intuitionStats} 
-                lockedMode={false}
+                lockedMode={isDojoLocked}
             />
         )}
         
         {sessionState === SessionState.DRAWING_DOJO && (
-             <DrawingDojo onClose={handleDojoComplete} />
+             <DrawingDojo onClose={handleDojoComplete} lockedMode={isDojoLocked} />
         )}
     </div>
   );
