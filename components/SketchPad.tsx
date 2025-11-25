@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -89,7 +88,6 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
     }
 
     // Calculate scale to map CSS pixels to Canvas bitmap pixels
-    // This fixes the offset issue when the canvas is resized by CSS
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
@@ -155,12 +153,13 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
         </div>
       </div>
       
-      <div className={`relative w-full bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none ${isExpanded ? 'flex-grow shadow-2xl' : 'aspect-square'}`}>
+      {/* Canvas Container: Ensures 1:1 Aspect Ratio even in Expanded Mode */}
+      <div className={`relative bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none mx-auto ${isExpanded ? 'flex-grow w-full flex items-center justify-center' : 'w-full aspect-square'}`}>
         <canvas
           ref={canvasRef}
           width={800}
           height={800}
-          className="w-full h-full bg-white cursor-crosshair object-contain"
+          className={`bg-white cursor-crosshair object-contain ${isExpanded ? 'max-w-full max-h-full aspect-square' : 'w-full h-full'}`}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
