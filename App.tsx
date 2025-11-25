@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Eye, LogIn, LogOut, User as UserIcon, AlertTriangle, XCircle, RefreshCw, CheckCircle2, Eraser, Brain, Sparkles, Image as ImageIcon, CheckCircle, Save, ArrowLeft, ArrowRight, Compass } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats, SessionType } from './types';
@@ -78,8 +79,7 @@ function App() {
   const startTimeRef = useRef<number>(0);
 
   const currentRank = calculateLevel(history);
-  // Unused RankIcon here, used in DashboardView but imported rank logic
-  // const rankStyle = getRankStyle(currentRank.level); 
+  const trainingCount = history.filter(s => s.sessionType === 'TRAINING').length;
 
   const STEPS = [
     { id: 1, title: t('stepFocus'), icon: Brain },
@@ -388,6 +388,25 @@ function App() {
           </div>
 
           <div className="flex items-center gap-4">
+             {/* Rank Badge Header Display - Hidden if not ranked */}
+             {user && (
+               <div className="hidden sm:flex items-center gap-3 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700">
+                 {!isHistoryLoaded ? (
+                   <div className="w-24 h-5 bg-slate-700 rounded animate-pulse"></div>
+                 ) : !currentRank.isRanked ? (
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                      <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></div>
+                      <span className="uppercase tracking-wider">{t('calibrating')} ({trainingCount}/3)</span>
+                    </div>
+                 ) : (
+                   <div className={`flex items-center gap-2 text-xs font-bold ${getRankStyle(currentRank.level).color}`}>
+                      <div className={`w-2 h-2 rounded-full ${getRankStyle(currentRank.level).bg.replace('/10','')} animate-pulse`}></div>
+                      <span className="uppercase tracking-wider">{t(currentRank.title)} {currentRank.division || 'I'}</span>
+                   </div>
+                 )}
+               </div>
+             )}
+
             {state !== SessionState.IDLE && state !== SessionState.DOJO && state !== SessionState.RESET && (
                <div className="hidden md:flex items-center gap-4 text-sm font-mono text-slate-400">
                   <div className="flex items-center gap-2">

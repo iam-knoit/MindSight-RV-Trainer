@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock } from 'lucide-react';
+import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock, Target, Lock } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SessionData, CoachReport } from '../../types';
 import HistoryChart from '../HistoryChart';
@@ -33,8 +33,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   // Strict filter for Performance Stats: Only Training sessions
   const trainingHistory = history.filter(s => s.sessionType === 'TRAINING' && s.aiScore !== undefined);
   const totalTrainingSeconds = trainingHistory.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
+  const trainingCount = trainingHistory.length;
   
-  const currentRank = calculateLevel(history); // calculateLevel now internally filters for TRAINING too
+  const currentRank = calculateLevel(history); // calculateLevel now filters for TRAINING internally and sets isRanked
   const rankStyle = getRankStyle(currentRank.level);
   const RankIcon = rankStyle.icon;
 
@@ -140,6 +141,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                  </button>
               </div>
             </div>
+            {/* History Chart handles filtering internally now, but we can rely on it to show training only */}
             <HistoryChart sessions={history} />
             <div className="mt-4 pt-4 border-t border-slate-800 flex justify-end">
               <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
@@ -152,35 +154,54 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div className="flex flex-col gap-6">
               {/* RANK CARD */}
-              <div className={`bg-gradient-to-br ${rankStyle.gradient} rounded-2xl border ${rankStyle.border} p-6 flex flex-col shadow-xl`}>
-                 <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-1 ${rankStyle.text}`}>{t('currentRank')}</h4>
-                        <div className="text-2xl font-bold text-white flex items-center gap-2">
-                            <RankIcon className={rankStyle.color} />
-                            {t(currentRank.title)} <span className="text-white/60 text-lg">{currentRank.division}</span>
-                        </div>
-                        <div className={`text-xs mt-1 ${rankStyle.text} opacity-80`}>
-                            {t('level')} {currentRank.level} • {t('avgScore')}: {currentRank.avgScore}%
-                        </div>
+              {!currentRank.isRanked ? (
+                 <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 flex flex-col shadow-xl flex-grow justify-center items-center text-center">
+                    <div className="p-4 bg-slate-800/80 rounded-full mb-4 relative">
+                        <Target className="text-slate-400" size={32} />
+                        <div className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
                     </div>
-                    <RankIcon size={40} className={`${rankStyle.text} opacity-20`} />
+                    <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-2">{t('rankLocked')}</h4>
+                    <p className="text-slate-400 text-xs mb-4 max-w-[200px] leading-relaxed">
+                        {t('rankLockedDesc')}
+                    </p>
+                    <div className="w-full max-w-[150px] h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${(trainingCount / 3) * 100}%` }}></div>
+                    </div>
+                    <p className="text-[10px] text-blue-400 font-mono mt-2 uppercase font-bold">
+                        {t('session')} {trainingCount} / 3
+                    </p>
                  </div>
-                 
-                 {/* Progress Bar */}
-                 <div className="mt-2">
-                    <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${rankStyle.text} opacity-70`}>
-                        <span>{t('division')} {currentRank.division || 'I'}</span>
-                        <span>{t('nextRank')}</span>
+              ) : (
+                <div className={`bg-gradient-to-br ${rankStyle.gradient} rounded-2xl border ${rankStyle.border} p-6 flex flex-col shadow-xl`}>
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 className={`text-xs font-bold uppercase tracking-widest mb-1 ${rankStyle.text}`}>{t('currentRank')}</h4>
+                            <div className="text-2xl font-bold text-white flex items-center gap-2">
+                                <RankIcon className={rankStyle.color} />
+                                {t(currentRank.title)} <span className="text-white/60 text-lg">{currentRank.division}</span>
+                            </div>
+                            <div className={`text-xs mt-1 ${rankStyle.text} opacity-80`}>
+                                {t('level')} {currentRank.level} • {t('avgScore')}: {currentRank.avgScore}%
+                            </div>
+                        </div>
+                        <RankIcon size={40} className={`${rankStyle.text} opacity-20`} />
                     </div>
-                    <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/10">
-                        <div 
-                            className={`h-full bg-white transition-all duration-1000 ease-out`}
-                            style={{ width: `${currentRank.progress}%` }}
-                        />
+                    
+                    {/* Progress Bar */}
+                    <div className="mt-2">
+                        <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${rankStyle.text} opacity-70`}>
+                            <span>{t('division')} {currentRank.division || 'I'}</span>
+                            <span>{t('nextRank')}</span>
+                        </div>
+                        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/10">
+                            <div 
+                                className={`h-full bg-white transition-all duration-1000 ease-out`}
+                                style={{ width: `${currentRank.progress}%` }}
+                            />
+                        </div>
                     </div>
-                 </div>
-              </div>
+                </div>
+              )}
 
               {/* AI COACH CARD */}
               <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 flex flex-col flex-grow">

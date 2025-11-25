@@ -10,8 +10,10 @@ export const calculateLevel = (sessions: SessionData[]) => {
     s.sessionType === 'TRAINING'
   );
   
+  const isRanked = validSessions.length >= 3;
+
   if (validSessions.length === 0) {
-    return { level: 1, title: 'lvl1', division: null, progress: 0, nextThreshold: 20, avgScore: 0 };
+    return { level: 1, title: 'lvl1', division: null, progress: 0, nextThreshold: 20, avgScore: 0, isRanked: false };
   }
   
   const avgScore = Math.round(validSessions.reduce((acc, s) => acc + (s.aiScore || 0), 0) / validSessions.length);
@@ -48,7 +50,7 @@ export const calculateLevel = (sessions: SessionData[]) => {
   const currentProgress = avgScore - minScore;
   const progressPercent = Math.min(100, Math.max(0, (currentProgress / totalRange) * 100));
 
-  return { level, title, division, progress: progressPercent, nextThreshold: maxScore, avgScore };
+  return { level, title, division, progress: progressPercent, nextThreshold: maxScore, avgScore, isRanked };
 };
 
 export const getRankStyle = (level: number) => {

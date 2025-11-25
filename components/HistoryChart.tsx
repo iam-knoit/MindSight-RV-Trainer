@@ -11,8 +11,8 @@ interface HistoryChartProps {
 const HistoryChart: React.FC<HistoryChartProps> = ({ sessions }) => {
   const { t } = useLanguage();
   
-  // Filter out sessions that have no score (Open Sessions)
-  const trainingSessions = sessions.filter(s => s.aiScore !== undefined && s.sessionType !== 'OPEN');
+  // Strictly filter for TRAINING sessions only
+  const trainingSessions = sessions.filter(s => s.aiScore !== undefined && s.sessionType === 'TRAINING');
 
   const data = trainingSessions.map((s, i) => ({
     name: `S${i + 1}`,
@@ -20,7 +20,7 @@ const HistoryChart: React.FC<HistoryChartProps> = ({ sessions }) => {
     date: new Date(s.timestamp).toLocaleDateString()
   }));
 
-  if (trainingSessions.length === 0) return <div className="text-slate-500 text-sm">{t('noHistory')}</div>;
+  if (trainingSessions.length === 0) return <div className="text-slate-500 text-sm italic">{t('noHistory')}</div>;
 
   return (
     <div className="h-48 w-full mt-4">
