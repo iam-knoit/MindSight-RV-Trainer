@@ -89,7 +89,9 @@ export const analyzeSession = async (
       ${langInstruction}
 
       Provide a JSON response with:
-      - score: An integer from 0 to 100 representing accuracy.
+      - score: An integer from 0 to 100 representing OVERALL accuracy.
+      - drawingScore: An integer from 0 to 100 representing the accuracy of the SKETCH specifically.
+      - notesScore: An integer from 0 to 100 representing the accuracy of the WRITTEN NOTES specifically.
       - feedback: A detailed analysis (at least 3-5 sentences) of what they got right and what they missed. Expand on observed strengths and weaknesses in their sketch and notes compared to the target. Be professional and encouraging.
     `
   });
@@ -105,6 +107,8 @@ export const analyzeSession = async (
           type: Type.OBJECT,
           properties: {
             score: { type: Type.INTEGER },
+            drawingScore: { type: Type.INTEGER },
+            notesScore: { type: Type.INTEGER },
             feedback: { type: Type.STRING }
           },
           required: ["score", "feedback"]
@@ -177,7 +181,9 @@ export const recalculateScore = async (
       ${langInstruction}
 
       Return JSON:
-      - score: The updated integer score (0-100).
+      - score: The updated overall integer score (0-100).
+      - drawingScore: Updated sketch score.
+      - notesScore: Updated notes score.
       - feedback: Updated feedback incorporating the review of their remarks. Mention whether the score changed and why.
     `
   });
@@ -193,6 +199,8 @@ export const recalculateScore = async (
           type: Type.OBJECT,
           properties: {
             score: { type: Type.INTEGER },
+            drawingScore: { type: Type.INTEGER },
+            notesScore: { type: Type.INTEGER },
             feedback: { type: Type.STRING }
           },
           required: ["score", "feedback"]

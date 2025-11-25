@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Eye, LogIn, LogOut, User as UserIcon, AlertTriangle, XCircle, RefreshCw, CheckCircle2, Eraser, Brain, Sparkles, Image as ImageIcon, CheckCircle, Save, ArrowLeft, ArrowRight, Compass } from 'lucide-react';
 import { SessionState, SessionData, TargetImage, CoachReport, IntuitionStats, SessionType } from './types';
@@ -9,6 +8,7 @@ import SketchPad from './components/SketchPad';
 import CoachChat from './components/CoachChat';
 import AnalyticsModal from './components/AnalyticsModal';
 import IntuitionDojo from './components/IntuitionDojo';
+import DrawingDojo from './components/DrawingDojo';
 import { useLanguage } from './contexts/LanguageContext';
 import { calculateLevel, getRankStyle } from './utils/leveling';
 
@@ -17,6 +17,7 @@ import AuthModal from './components/modals/AuthModal';
 import ConfirmationModal from './components/modals/ConfirmationModal';
 import ModeSelectionModal from './components/modals/ModeSelectionModal';
 import SessionLogModal from './components/modals/SessionLogModal';
+import RankToast from './components/modals/RankToast';
 import Step1Focus from './components/session/Step1Focus';
 import Step2Impressions from './components/session/Step2Impressions';
 import Step4Review from './components/session/Step4Review';
@@ -45,7 +46,7 @@ function App() {
   const [userSketch, setUserSketch] = useState<string | null>(null);
   
   const [history, setHistory] = useState<SessionData[]>([]);
-  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false); 
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(t('initializing'));
@@ -75,19 +76,55 @@ function App() {
   // Reset State Animation
   const [isResetting, setIsResetting] = useState(false);
 
+  // Rank Notification State
+  const [newRankData, setNewRankData] = useState<{level: number, title: string, division: string | null, isCalibration: boolean} | null>(null);
+  const prevRankRef = useRef<{level: number, isRanked: boolean} | null>(null);
+
   const sessionRef = useRef<boolean>(false);
   const startTimeRef = useRef<number>(0);
 
   const currentRank = calculateLevel(history);
   const trainingCount = history.filter(s => s.sessionType === 'TRAINING').length;
 
-  const STEPS = [
-    { id: 1, title: t('stepFocus'), icon: Brain },
-    { id: 2, title: t('stepImpressions'), icon: Sparkles },
-    { id: 3, title: t('stepSketch'), icon: ImageIcon },
-    { id: 4, title: t('stepReview'), icon: CheckCircle },
-  ];
+  // Monitor History for Rank Changes
+  useEffect(() => {
+    // We only check for rank changes if history is fully loaded
+    if (!isHistoryLoaded) return;
 
+    const currentStats = calculateLevel(history);
+
+    if (prevRankRef.current) {
+        const prev = prevRankRef.current;
+        
+        // Scenario 1: Unranked -> Ranked (Calibration Complete)
+        if (!prev.isRanked && currentStats.isRanked) {
+            setNewRankData({
+                level: currentStats.level,
+                title: currentStats.title,
+                division: currentStats.division,
+                isCalibration: true
+            });
+        }
+        // Scenario 2: Ranked Level Up
+        else if (prev.isRanked && currentStats.isRanked && currentStats.level > prev.level) {
+            setNewRankData({
+                level: currentStats.level,
+                title: currentStats.title,
+                division: currentStats.division,
+                isCalibration: false
+            });
+        }
+    }
+
+    // Update the ref to current state
+    prevRankRef.current = { 
+        level: currentStats.level, 
+        isRanked: currentStats.isRanked 
+    };
+
+  }, [history, isHistoryLoaded]);
+
+  // Auth State Observer
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -97,12 +134,14 @@ function App() {
         setCoachReport(null);
         setIntuitionStats(null);
         setIsIntuitionLoaded(false);
+        prevRankRef.current = null; // Reset rank tracker
       }
       setIsAuthChecking(false);
     });
     return () => unsubscribe();
   }, []);
 
+  // Database Sync Observers
   useEffect(() => {
     if (user) {
       const unsubHistory = subscribeToHistory(user.uid, (sessions) => {
@@ -165,7 +204,7 @@ function App() {
           
           const updatedData: Partial<SessionData> = {
               aiGuessedSubject: result.subject,
-              aiFeedback: result.analysis 
+              aiFeedback: result.analysis
           };
 
           await updateSessionData(user.uid, session.id, updatedData);
@@ -258,17 +297,41 @@ function App() {
   };
 
   const goHome = () => {
+    // 1. Block exit if locked in Zener Dojo
     if (state === SessionState.DOJO && isDojoLocked) {
       alert(t('completeCalibration'));
       return;
     }
 
-    if (state === SessionState.FEEDBACK && currentSession?.sessionType === 'TRAINING' && (currentSession.aiScore ?? 100) < 50) {
-      alert(t('lowScoreRedirect'));
-      sessionRef.current = false;
-      setIsDojoLocked(true);
-      setState(SessionState.DOJO);
+    // 2. Block exit if locked in Drawing Dojo
+    if (state === SessionState.DRAWING_DOJO && isDojoLocked) {
+      alert(t('completeCalibration'));
       return;
+    }
+
+    // 3. Check for Low Scores in Feedback Mode (Training only)
+    if (state === SessionState.FEEDBACK && currentSession?.sessionType === 'TRAINING') {
+        const score = currentSession.aiScore ?? 100;
+        const drawingScore = currentSession.drawingScore ?? 100;
+
+        // Condition A: Total Score < 50 -> Intuition Dojo
+        if (score < 50) {
+            alert(t('lowScoreRedirect'));
+            sessionRef.current = false;
+            setIsDojoLocked(true);
+            setState(SessionState.DOJO);
+            return;
+        } 
+        
+        // Condition B: Total Score >= 50 BUT Drawing Score < 45 -> Drawing Dojo
+        // Note: We use 45 as a lenient threshold for "Bad Sketch"
+        if (score >= 50 && drawingScore < 45) {
+            alert(t('lowDrawingRedirect'));
+            sessionRef.current = false;
+            setIsDojoLocked(true);
+            setState(SessionState.DRAWING_DOJO);
+            return;
+        }
     }
 
     if (state === SessionState.IDLE) return;
@@ -329,6 +392,8 @@ function App() {
         targetImageUrl: target.url,
         targetImageBase64: target.base64,
         aiScore: result.score,
+        drawingScore: result.drawingScore, // New
+        notesScore: result.notesScore,     // New
         aiFeedback: result.feedback,
       };
       
@@ -338,57 +403,75 @@ function App() {
     } catch (e) {
       console.error("Session submission failed:", e);
       if (sessionRef.current) {
-        setAnalysisError(t('analysisFailed'));
-        setState(SessionState.VIEWING);
-        setStep(4);
-        alert(t('analysisFailed') + ": " + e);
+         setAnalysisError(t('analysisErrorDesc'));
+         // Don't change state, stay in Analyzing to show error
       }
     }
   };
 
+  const handleSaveRemarks = async (remarks: string) => {
+    if (!user || !currentSession) return;
+    setIsSavingRemarks(true);
+    
+    try {
+        await updateSessionData(user.uid, currentSession.id, { postSessionRemarks: remarks });
+        
+        if (currentSession.sessionType === 'TRAINING') {
+            const result = await recalculateScore(currentSession, remarks);
+            const updatedData = {
+                aiScore: result.score,
+                drawingScore: result.drawingScore, // New
+                notesScore: result.notesScore,     // New
+                aiFeedback: result.feedback,
+                postSessionRemarks: remarks
+            };
+            await updateSessionData(user.uid, currentSession.id, updatedData);
+            setCurrentSession(prev => prev ? ({ ...prev, ...updatedData }) : null);
+        } else {
+            setCurrentSession(prev => prev ? ({ ...prev, postSessionRemarks: remarks }) : null);
+        }
+        
+        setRemarksSaved(true);
+        setTimeout(() => setRemarksSaved(false), 3000);
+    } catch (e) {
+        console.error("Failed to save remarks", e);
+        alert("Could not update session.");
+    } finally {
+        setIsSavingRemarks(false);
+    }
+  };
+
+  // --- RENDER ---
+
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <RefreshCw className="animate-spin text-blue-500" size={32} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
-       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-       <ConfirmationModal 
-          isOpen={showExitConfirm} 
-          title={t('exitSession')} 
-          message={t('confirmExit')}
-          onConfirm={confirmExitSession} 
-          onCancel={() => setShowExitConfirm(false)} 
-       />
-       <ModeSelectionModal 
-          isOpen={showModeSelection} 
-          onClose={() => setShowModeSelection(false)} 
-          onSelectTraining={() => handleStartSession('TRAINING')}
-          onSelectOpen={(intent) => handleStartSession('OPEN', intent)}
-       />
-       <SessionLogModal
-          isOpen={showSessionLog}
-          onClose={() => setShowSessionLog(false)}
-          history={history}
-          onDeleteSession={handleDeleteSession}
-          onUpdateSession={handleUpdateSession}
-       />
-       <AnalyticsModal
-          isOpen={showAnalyticsModal}
-          onClose={() => setShowAnalyticsModal(false)}
-          history={history}
-          coachReport={coachReport}
-       />
-       <CoachChat 
-          isOpen={showChat} 
-          onClose={() => setShowChat(false)} 
-          history={history}
-       />
-
-       <header className="fixed top-0 left-0 right-0 h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-40 flex items-center justify-between px-4">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={goHome}>
-             <Brain className="text-blue-500" />
-             <h1 className="font-bold text-lg tracking-tight hidden sm:block">{t('appTitle')} <span className="text-slate-500 font-normal text-xs ml-1">{t('appSubtitle')}</span></h1>
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30 selection:text-blue-200">
+      
+      {/* Header */}
+      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 p-2 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.3)]">
+               <Eye className="text-white" size={20} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
+                {t('appTitle')}
+              </h1>
+              <p className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
+                {t('appSubtitle')}
+              </p>
+            </div>
           </div>
-
+          
           <div className="flex items-center gap-4">
-             {/* Rank Badge Header Display - Hidden if not ranked */}
              {user && (
                <div className="hidden sm:flex items-center gap-3 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700">
                  {!isHistoryLoaded ? (
@@ -406,204 +489,279 @@ function App() {
                  )}
                </div>
              )}
-
-            {state !== SessionState.IDLE && state !== SessionState.DOJO && state !== SessionState.RESET && (
-               <div className="hidden md:flex items-center gap-4 text-sm font-mono text-slate-400">
-                  <div className="flex items-center gap-2">
-                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                     {coordinate}
-                  </div>
-                  <div>{t('session')} #{sessionNumber}</div>
-               </div>
-            )}
-            
-            {user ? (
-               <button onClick={() => { logOut(); setUser(null); }} className="p-2 text-slate-400 hover:text-white" title={t('logout')}>
-                  <LogOut size={20} />
+             
+             {user ? (
+               <button 
+                 onClick={logOut} 
+                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                 title={t('logout')}
+               >
+                 <LogOut size={20} />
                </button>
-            ) : (
-               <button onClick={() => setShowAuthModal(true)} className="p-2 text-blue-400 hover:text-blue-300" title={t('login')}>
-                  <LogIn size={20} />
+             ) : (
+               <button 
+                 onClick={() => setShowAuthModal(true)} 
+                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-all"
+               >
+                 <LogIn size={16} /> <span className="hidden sm:inline">{t('login')}</span>
                </button>
-            )}
+             )}
           </div>
-       </header>
+        </div>
+      </header>
 
-       <main className="pt-20 px-4 pb-8 min-h-screen flex flex-col relative">
-          
-          {state === SessionState.IDLE && (
-             <DashboardView 
-                user={user}
-                history={history}
-                coachReport={coachReport}
-                isLoading={isLoading}
-                loadingMessage={loadingMessage}
-                analyzingHistory={analyzingHistory}
-                onShowAuth={() => setShowAuthModal(true)}
-                onShowModeSelection={() => setShowModeSelection(true)}
-                onShowAnalytics={() => setShowAnalyticsModal(true)}
-                onShowChat={() => setShowChat(true)}
-                onRunCoachAnalysis={runCoachAnalysis}
-                onEnterDojo={() => setState(SessionState.DOJO)}
-                onShowSessionLog={() => setShowSessionLog(true)}
-                isHistoryLoaded={isHistoryLoaded}
-             />
-          )}
-
-          {state === SessionState.DOJO && (
-             <IntuitionDojo 
-               onClose={() => {
-                 if (isDojoLocked && (!intuitionStats || intuitionStats.currentStreak < 3)) {
-                   alert(t('completeCalibration'));
-                   return;
-                 }
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto">
+        
+        {/* DOJO: ZENER (Intuition) */}
+        {state === SessionState.DOJO && (
+          <IntuitionDojo 
+            onClose={() => {
+              if (isDojoLocked) {
                  setIsDojoLocked(false);
-                 setState(SessionState.IDLE);
-               }}
-               initialStats={intuitionStats}
-               lockedMode={isDojoLocked}
-               isLoading={!isIntuitionLoaded}
-             />
-          )}
+              }
+              setState(SessionState.IDLE);
+            }} 
+            initialStats={intuitionStats}
+            isLoading={!isIntuitionLoaded}
+            lockedMode={isDojoLocked}
+          />
+        )}
 
-          {state === SessionState.RESET && (
-             <div className="flex flex-col items-center justify-center h-[80vh] animate-in fade-in duration-1000">
-                <div className="w-32 h-32 rounded-full border-4 border-slate-800 flex items-center justify-center mb-8 relative">
-                   <div className="absolute inset-0 bg-slate-800 rounded-full animate-ping opacity-20"></div>
-                   <Eraser size={48} className="text-slate-500" />
+        {/* DOJO: VISUAL MOTOR (Drawing) */}
+        {state === SessionState.DRAWING_DOJO && (
+           <DrawingDojo 
+              onClose={() => {
+                  if (isDojoLocked) setIsDojoLocked(false);
+                  setState(SessionState.IDLE);
+              }}
+              lockedMode={isDojoLocked}
+           />
+        )}
+        
+        {state === SessionState.IDLE && (
+          <DashboardView 
+             user={user}
+             history={history}
+             coachReport={coachReport}
+             isLoading={isLoading}
+             loadingMessage={loadingMessage}
+             analyzingHistory={analyzingHistory}
+             onShowAuth={() => setShowAuthModal(true)}
+             onShowModeSelection={() => setShowModeSelection(true)}
+             onShowAnalytics={() => setShowAnalyticsModal(true)}
+             onShowChat={() => setShowChat(true)}
+             onRunCoachAnalysis={runCoachAnalysis}
+             onEnterDojo={() => setState(SessionState.DOJO)}
+             onShowSessionLog={() => setShowSessionLog(true)}
+             isHistoryLoaded={isHistoryLoaded}
+          />
+        )}
+
+        {/* --- VIEWING PHASE --- */}
+        {(state === SessionState.VIEWING || state === SessionState.ANALYZING) && (
+          <div className="flex flex-col h-[calc(100vh-64px)]">
+             {/* Progress Bar */}
+             <div className="h-1 bg-slate-800 w-full">
+                <div 
+                  className="h-full bg-blue-500 transition-all duration-500 ease-out"
+                  style={{ width: `${(step / 4) * 100}%` }}
+                ></div>
+             </div>
+             
+             {/* Step Header */}
+             <div className="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center shadow-lg z-20">
+                <div className="flex items-center gap-3">
+                   <div className="bg-slate-800 p-2 rounded-lg text-blue-400">
+                      {step === 1 && <Brain size={20} />}
+                      {step === 2 && <Sparkles size={20} />}
+                      {step === 3 && <ImageIcon size={20} />}
+                      {step === 4 && <CheckCircle size={20} />}
+                   </div>
+                   <div>
+                      <h2 className="font-bold text-white">{t(`step${step === 1 ? 'Focus' : step === 2 ? 'Impressions' : step === 3 ? 'Sketch' : 'Review'}`)}</h2>
+                      <p className="text-xs text-slate-500 font-mono">{t('session')} #{sessionNumber} • {sessionType === 'OPEN' ? 'OPEN' : 'BLIND'}</p>
+                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">{t('resetTitle')}</h2>
-                <p className="text-slate-400 mb-8">{t('resetDesc')}</p>
                 <button 
-                  onClick={() => {
-                    setIsResetting(false);
-                    setState(SessionState.IDLE);
-                  }}
-                  className="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-bold transition-all"
+                  onClick={goHome} 
+                  className="text-slate-400 hover:text-red-400 hover:bg-red-900/10 p-2 rounded-lg transition-colors"
                 >
-                  {t('resetComplete')}
+                  <XCircle size={20} />
                 </button>
              </div>
-          )}
 
-          {(state === SessionState.VIEWING || state === SessionState.ANALYZING || state === SessionState.FEEDBACK) && (
-             <div className="w-full h-full flex flex-col flex-grow">
-                {state === SessionState.VIEWING && (
-                  <div className="flex justify-center mb-8">
-                     <div className="flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-full border border-slate-800">
-                        {STEPS.map((s) => {
-                           const isActive = step === s.id;
-                           const isPassed = step > s.id;
-                           return (
-                             <div key={s.id} className="flex items-center">
-                                <div 
-                                  className={`
-                                    flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300
-                                    ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : isPassed ? 'text-blue-400' : 'text-slate-600'}
-                                  `}
-                                >
-                                   <s.icon size={16} />
-                                   <span className={`text-xs font-bold uppercase ${isActive ? 'block' : 'hidden md:block'}`}>{s.title}</span>
-                                </div>
-                                {s.id < 4 && <div className={`w-4 h-0.5 mx-1 ${isPassed ? 'bg-blue-900' : 'bg-slate-800'}`} />}
-                             </div>
-                           );
-                        })}
+             {/* Step Content */}
+             <div className="flex-grow overflow-hidden relative bg-slate-950">
+                
+                {state === SessionState.ANALYZING && (
+                  <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">
+                     <div className="relative">
+                        <RefreshCw className="text-blue-500 animate-spin" size={48} />
+                        <div className="absolute inset-0 bg-blue-500/20 blur-xl animate-pulse"></div>
                      </div>
+                     <h2 className="text-2xl font-bold text-white mt-6 mb-2">{t('analyzingTitle')}</h2>
+                     <p className="text-slate-400">{t('analyzingDesc')}</p>
+                     
+                     {analysisError && (
+                        <div className="mt-8 bg-red-900/20 border border-red-500/50 p-6 rounded-xl max-w-md text-center animate-in zoom-in duration-300">
+                           <AlertTriangle className="text-red-500 mx-auto mb-3" size={32} />
+                           <h3 className="text-red-400 font-bold mb-2">{t('analysisFailed')}</h3>
+                           <p className="text-slate-300 text-sm mb-4">{analysisError}</p>
+                           <button 
+                             onClick={submitSession}
+                             className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold"
+                           >
+                             {t('tryAgain')}
+                           </button>
+                           <button 
+                             onClick={() => setState(SessionState.VIEWING)}
+                             className="block mx-auto mt-4 text-slate-500 hover:text-white text-sm"
+                           >
+                             {t('returnToReview')}
+                           </button>
+                        </div>
+                     )}
                   </div>
                 )}
 
-                <div className="flex-grow flex flex-col relative">
-                   {state === SessionState.ANALYZING && (
-                      <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">
-                          <RefreshCw className="animate-spin text-blue-500 mb-4" size={48} />
-                          <h3 className="text-xl font-bold text-white mb-2">{t('analyzingTitle')}</h3>
-                          <p className="text-slate-400">{t('analyzingDesc')}</p>
-                      </div>
+                <div className="h-full w-full overflow-y-auto p-4 custom-scrollbar">
+                   {step === 1 && (
+                      <Step1Focus 
+                        coordinate={coordinate} 
+                        onNext={() => setStep(2)} 
+                      />
                    )}
-                   
-                   {state === SessionState.VIEWING && step === 1 && (
-                      <Step1Focus coordinate={coordinate} onNext={() => setStep(2)} />
-                   )}
-
-                   {state === SessionState.VIEWING && step === 2 && (
+                   {step === 2 && (
                       <Step2Impressions 
                         notes={userNotes} 
-                        onChange={setUserNotes} 
-                        onNext={() => setStep(3)} 
+                        onChange={setUserNotes}
+                        onNext={() => setStep(3)}
                         onBack={() => setStep(1)}
                       />
                    )}
-
-                   {state === SessionState.VIEWING && step === 3 && (
-                      <div className="flex flex-col h-full animate-in slide-in-from-right-8 duration-300">
-                         <div className="text-center mb-4">
-                            <h2 className="text-2xl font-bold text-white mb-1">{t('stage2Title')}</h2>
-                            <p className="text-slate-400">{t('stage2Desc')}</p>
+                   {step === 3 && (
+                      <div className="h-full flex flex-col items-center animate-in slide-in-from-right-8 duration-300">
+                         <div className="w-full max-w-4xl flex-grow bg-white rounded-xl overflow-hidden shadow-2xl border border-slate-700">
+                            <SketchPad onExport={(img) => setUserSketch(img)} />
                          </div>
-                         <div className="flex-grow bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-2xl relative">
-                            <SketchPad onExport={setUserSketch} />
-                         </div>
-                         <div className="flex justify-between mt-4">
+                         <div className="w-full max-w-4xl flex justify-between mt-4">
                             <button onClick={() => setStep(2)} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
                                <ArrowLeft size={18} /> {t('btnBack')}
                             </button>
-                            <button onClick={() => setStep(4)} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
+                            <button 
+                              onClick={() => {
+                                if (!userSketch) {
+                                  alert("Please draw something before continuing."); 
+                                  return;
+                                }
+                                setStep(4);
+                              }} 
+                              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                            >
                                {t('sketchReviewBtn')} <ArrowRight size={18} />
                             </button>
                          </div>
                       </div>
                    )}
-
-                   {state === SessionState.VIEWING && step === 4 && (
+                   {step === 4 && (
                       <Step4Review 
-                        notes={userNotes} 
-                        sketch={userSketch} 
-                        onSubmit={submitSession} 
-                        onBack={() => setStep(3)} 
+                        notes={userNotes}
+                        sketch={userSketch}
+                        onSubmit={submitSession}
+                        onBack={() => setStep(3)}
                         sessionType={sessionType}
-                      />
-                   )}
-
-                   {state === SessionState.FEEDBACK && (
-                      <FeedbackView 
-                        currentSession={currentSession}
-                        history={history}
-                        onNextSession={triggerResetAndStart}
-                        onCalibrationRequired={() => {
-                           setIsDojoLocked(true);
-                           setState(SessionState.DOJO);
-                        }}
-                        onSaveRemarks={async (remarks) => {
-                            if (!currentSession || !user) return;
-                            setIsSavingRemarks(true);
-                            try {
-                                const newResult = await recalculateScore(currentSession, remarks);
-                                await handleUpdateSession(currentSession.id, { 
-                                    postSessionRemarks: remarks,
-                                    aiScore: newResult.score,
-                                    aiFeedback: newResult.feedback
-                                });
-                                setCurrentSession(prev => prev ? { ...prev, postSessionRemarks: remarks, aiScore: newResult.score, aiFeedback: newResult.feedback } : null);
-                                setRemarksSaved(true);
-                            } catch (e) {
-                                console.error(e);
-                                alert("Failed to save remarks");
-                            } finally {
-                                setIsSavingRemarks(false);
-                            }
-                        }}
-                        onOpenAnalysis={sessionType === 'OPEN' ? handleOpenAnalysis : undefined}
-                        onGenerateImage={sessionType === 'OPEN' ? handleGenerateImage : undefined}
-                        isSavingRemarks={isSavingRemarks}
-                        remarksSaved={remarksSaved}
-                        isOpenAnalyzing={isOpenAnalyzing}
                       />
                    )}
                 </div>
              </div>
-          )}
-       </main>
+          </div>
+        )}
+
+        {/* --- FEEDBACK PHASE --- */}
+        {state === SessionState.FEEDBACK && (
+           <FeedbackView 
+              currentSession={currentSession}
+              history={history}
+              onNextSession={goHome}
+              onCalibrationRequired={goHome}
+              onSaveRemarks={handleSaveRemarks}
+              onOpenAnalysis={handleOpenAnalysis}
+              onGenerateImage={handleGenerateImage}
+              isSavingRemarks={isSavingRemarks}
+              remarksSaved={remarksSaved}
+              isOpenAnalyzing={isOpenAnalyzing}
+           />
+        )}
+        
+        {/* --- RESET PHASE --- */}
+        {state === SessionState.RESET && (
+           <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center animate-in fade-in duration-1000">
+              <div className="relative">
+                 <div className="w-64 h-64 rounded-full border-4 border-slate-800 bg-slate-900 flex items-center justify-center animate-pulse">
+                     <span className="text-slate-700 font-mono text-xs">{t('resetDesc')}</span>
+                 </div>
+                 <div className="absolute inset-0 border-t-4 border-blue-500 rounded-full animate-spin duration-[3000ms]"></div>
+              </div>
+              <h2 className="text-2xl font-bold text-white mt-8 tracking-widest uppercase">{t('resetTitle')}</h2>
+              <p className="text-slate-400 mt-2 max-w-md text-center">{t('resetInstruction')}</p>
+              
+              <button 
+                onClick={() => handleStartSession(sessionType, targetIntent)} // Restart with same settings
+                className="mt-8 px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform"
+              >
+                {t('resetAction')}
+              </button>
+           </div>
+        )}
+
+      </main>
+
+      {/* --- MODALS --- */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <ConfirmationModal 
+        isOpen={showExitConfirm} 
+        title={t('confirmExit')}
+        message={t('exitSession')} 
+        onConfirm={confirmExitSession}
+        onCancel={() => setShowExitConfirm(false)}
+      />
+      <CoachChat 
+        isOpen={showChat} 
+        onClose={() => setShowChat(false)} 
+        history={history}
+      />
+      <AnalyticsModal 
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
+        history={history}
+        coachReport={coachReport}
+      />
+      <ModeSelectionModal 
+        isOpen={showModeSelection}
+        onClose={() => setShowModeSelection(false)}
+        onSelectTraining={() => handleStartSession('TRAINING')}
+        onSelectOpen={(intent) => handleStartSession('OPEN', intent)}
+      />
+      <SessionLogModal
+        isOpen={showSessionLog}
+        onClose={() => setShowSessionLog(false)}
+        history={history}
+        onDeleteSession={handleDeleteSession}
+        onUpdateSession={handleUpdateSession}
+      />
+      
+      {/* RANK PROMOTION TOAST */}
+      {newRankData && (
+        <RankToast 
+            level={newRankData.level}
+            title={newRankData.title}
+            division={newRankData.division}
+            isCalibrationComplete={newRankData.isCalibration}
+            onClose={() => setNewRankData(null)}
+        />
+      )}
+
     </div>
   );
 }

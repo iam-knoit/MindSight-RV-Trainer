@@ -1,4 +1,3 @@
-
 // ... keep imports
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
@@ -18,6 +17,12 @@ const translations = {
     // Meta / Global
     "appTitle": "MindSight",
     "appSubtitle": `RV TRAINING PROTOCOL v${appVersion}`,
+    
+    // RANK PROMOTION
+    "rankPromoted": "Rank Promoted",
+    "calibrationComplete": "Calibration Complete",
+    "continue": "Continue",
+
     // ... (keep existing translations)
     "dojoLockedMsg": "LOCKED",
     "dojoUnlockedMsg": "CALIBRATION COMPLETE",

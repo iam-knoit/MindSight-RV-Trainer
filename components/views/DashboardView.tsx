@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock, Target, Lock } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -34,6 +33,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const trainingHistory = history.filter(s => s.sessionType === 'TRAINING' && s.aiScore !== undefined);
   const totalTrainingSeconds = trainingHistory.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
   const trainingCount = trainingHistory.length;
+  const isUnlocked = trainingCount >= 3;
   
   const currentRank = calculateLevel(history); // calculateLevel now filters for TRAINING internally and sets isRanked
   const rankStyle = getRankStyle(currentRank.level);
@@ -126,18 +126,32 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     {t('sessionLog')}
                  </button>
                  <button 
-                    onClick={onShowAnalytics}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-full border border-slate-700 transition-all flex items-center gap-2"
+                    onClick={isUnlocked ? onShowAnalytics : undefined}
+                    disabled={!isUnlocked}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-2
+                        ${isUnlocked 
+                            ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' 
+                            : 'bg-slate-800/50 text-slate-600 border-slate-800 cursor-not-allowed'}
+                    `}
+                    title={!isUnlocked ? t('aiCoachUnlock') : ''}
                  >
                     <BarChart3 size={12} />
                     {t('viewAnalytics')}
+                    {!isUnlocked && <Lock size={10} />}
                  </button>
                  <button 
-                   onClick={onShowChat}
-                   className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                   onClick={isUnlocked ? onShowChat : undefined}
+                   disabled={!isUnlocked}
+                   className={`text-xs px-3 py-1.5 rounded-full transition-all flex items-center gap-2
+                      ${isUnlocked
+                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20'
+                          : 'bg-slate-800 text-slate-600 cursor-not-allowed'}
+                   `}
+                   title={!isUnlocked ? t('aiCoachUnlock') : ''}
                  >
                    <MessageSquareText size={12} />
                    {t('openChat')}
+                   {!isUnlocked && <Lock size={10} />}
                  </button>
               </div>
             </div>
@@ -248,7 +262,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         <p className="text-sm font-semibold">{t('aiCoachReady')}</p>
                         <p className="text-xs mt-1 max-w-[200px]">{t('aiCoachUnlock')}</p>
                     </div>
-                    {trainingHistory.length >= 3 && (
+                    {isUnlocked && (
                         <button 
                         onClick={onRunCoachAnalysis}
                         disabled={analyzingHistory} 

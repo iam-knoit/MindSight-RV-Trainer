@@ -5,6 +5,7 @@ export enum SessionState {
   ANALYZING = 'ANALYZING',
   FEEDBACK = 'FEEDBACK',
   DOJO = 'DOJO', // New state for Intuition Dojo
+  DRAWING_DOJO = 'DRAWING_DOJO', // New state for Drawing Dojo
   RESET = 'RESET', // New state for Mental Reset
 }
 
@@ -26,6 +27,8 @@ export interface SessionData {
   
   // AI Data is optional for OPEN sessions
   aiScore?: number;
+  drawingScore?: number; // Added: sub-score for sketch
+  notesScore?: number;   // Added: sub-score for notes
   aiFeedback?: string;
   aiGuessedSubject?: string; // The AI's guess in Open Mode
   generatedImageUrl?: string; // AI reconstruction of the target
@@ -48,6 +51,8 @@ export interface TargetImage {
 
 export interface ScoringResult {
   score: number;
+  drawingScore?: number;
+  notesScore?: number;
   feedback: string;
 }
 
