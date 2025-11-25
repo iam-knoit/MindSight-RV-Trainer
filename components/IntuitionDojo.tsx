@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Circle, Square, Star, Waves, Plus, Trophy, Target, Zap, RotateCcw, Lock, CheckCircle2 } from 'lucide-react';
+import { Circle, Square, Star, Waves, Plus, Trophy, Target, Zap, RotateCcw, Lock, CheckCircle2, Loader2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { IntuitionStats } from '../types';
 import { updateIntuitionStats } from '../services/firebase';
@@ -10,6 +10,7 @@ interface IntuitionDojoProps {
   onClose: () => void;
   initialStats: IntuitionStats | null;
   lockedMode?: boolean; // If true, user must achieve a target to exit
+  isLoading?: boolean;
 }
 
 type CardType = 'circle' | 'square' | 'star' | 'waves' | 'cross';
@@ -24,7 +25,7 @@ const CARDS: { type: CardType; icon: React.FC<any>; color: string }[] = [
 
 const TARGET_STREAK_TO_UNLOCK = 3;
 
-const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lockedMode = false }) => {
+const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lockedMode = false, isLoading = false }) => {
   const { t } = useLanguage();
   
   // Game State
@@ -40,6 +41,13 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lo
     currentStreak: 0,
     bestStreak: 0
   });
+
+  // Sync state if initialStats arrives late (e.g. from network load)
+  useEffect(() => {
+    if (initialStats) {
+      setStats(initialStats);
+    }
+  }, [initialStats]);
 
   // Pick a new random target on mount/reset
   useEffect(() => {
@@ -61,7 +69,7 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lo
   };
 
   const handleGuess = (card: CardType) => {
-    if (isRevealed || !targetCard) return;
+    if (isRevealed || !targetCard || isLoading) return;
     
     setSelectedCard(card);
     setIsRevealed(true);
@@ -96,6 +104,15 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lo
   const accuracy = stats.totalGuesses > 0 
     ? Math.round((stats.correctGuesses / stats.totalGuesses) * 100) 
     : 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-4xl mx-auto p-4">
+        <Loader2 className="animate-spin w-12 h-12 text-blue-500 mb-4" />
+        <p className="text-slate-400 font-medium tracking-wide animate-pulse">SYNCING DOJO DATA...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-4xl mx-auto p-4 animate-in fade-in duration-500">

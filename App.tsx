@@ -61,6 +61,7 @@ function App() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const [intuitionStats, setIntuitionStats] = useState<IntuitionStats | null>(null);
+  const [isIntuitionLoaded, setIsIntuitionLoaded] = useState(false);
   const [isDojoLocked, setIsDojoLocked] = useState(false);
 
   // Remarks State
@@ -95,6 +96,7 @@ function App() {
         setHistory([]); 
         setCoachReport(null);
         setIntuitionStats(null);
+        setIsIntuitionLoaded(false);
       }
       setIsAuthChecking(false);
     });
@@ -105,7 +107,10 @@ function App() {
   useEffect(() => {
     if (user) {
       const unsubHistory = subscribeToHistory(user.uid, (sessions) => setHistory(sessions));
-      const unsubDojo = subscribeToIntuitionStats(user.uid, (stats) => setIntuitionStats(stats));
+      const unsubDojo = subscribeToIntuitionStats(user.uid, (stats) => {
+        setIntuitionStats(stats);
+        setIsIntuitionLoaded(true);
+      });
       return () => { unsubHistory(); unsubDojo(); };
     }
   }, [user]);
@@ -579,7 +584,8 @@ function App() {
       <AnalyticsModal isOpen={showAnalyticsModal} onClose={() => setShowAnalyticsModal(false)} history={history} coachReport={coachReport} />
       <SessionLogModal isOpen={showSessionLog} onClose={() => setShowSessionLog(false)} history={history} onDeleteSession={handleDeleteSession} onUpdateSession={handleUpdateSession} />
       
-      {user && <CoachChat isOpen={showChat} onClose={() => setShowChat(false)} history={history} />}
+      {/* Conditionally render CoachChat to force re-initialization when opened */}
+      {user && showChat && <CoachChat isOpen={showChat} onClose={() => setShowChat(false)} history={history} />}
 
       {renderHeader()}
       
@@ -593,7 +599,12 @@ function App() {
           />
         )}
         {state === SessionState.DOJO && (
-          <IntuitionDojo onClose={() => { setIsDojoLocked(false); setState(SessionState.IDLE); }} initialStats={intuitionStats} lockedMode={isDojoLocked} />
+          <IntuitionDojo 
+            onClose={() => { setIsDojoLocked(false); setState(SessionState.IDLE); }} 
+            initialStats={intuitionStats} 
+            lockedMode={isDojoLocked} 
+            isLoading={!isIntuitionLoaded} // Pass loading state to Dojo
+          />
         )}
         {state === SessionState.RESET && renderReset()}
         {state === SessionState.VIEWING && renderViewing()}
