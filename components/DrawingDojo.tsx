@@ -130,7 +130,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
         {step === 'draw' && (
            <div className="w-full h-full flex flex-col items-center animate-in fade-in duration-300">
               <h3 className="text-xl text-white font-bold mb-4">{t('drawingDojoDraw')}</h3>
-              <div className="w-full aspect-square max-h-[500px] border border-slate-600 rounded-lg overflow-hidden bg-white">
+              <div className="w-full max-w-[500px]">
                  <SketchPad onExport={handleExportSketch} />
               </div>
               <button 

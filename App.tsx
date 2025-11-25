@@ -476,8 +476,11 @@ const App: React.FC = () => {
                                 <h2 className="text-2xl font-bold text-white mb-2">{t('stage2Title')}</h2>
                                 <p className="text-slate-400">{t('stage2Desc')}</p>
                             </div>
-                            <div className="flex-grow bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl relative min-h-[400px]">
-                                <SketchPad onExport={updateSketch} />
+                            {/* Centered Square Container for SketchPad */}
+                            <div className="flex-grow flex items-center justify-center">
+                                <div className="w-full max-w-[550px]">
+                                    <SketchPad onExport={updateSketch} />
+                                </div>
                             </div>
                             <div className="flex justify-between mt-6">
                                 <button onClick={handleStepBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">

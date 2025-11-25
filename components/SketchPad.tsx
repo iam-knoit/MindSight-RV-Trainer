@@ -110,7 +110,7 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
   };
 
   return (
-    <div className={`flex flex-col gap-2 transition-all duration-300 ${isExpanded ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'w-full h-full'}`}>
+    <div className={`flex flex-col gap-2 transition-all duration-300 ${isExpanded ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'w-full'}`}>
       <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700 shadow-lg">
         <div className="flex gap-2">
           <button
@@ -155,12 +155,12 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
         </div>
       </div>
       
-      <div className={`relative flex-grow w-full bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none ${isExpanded ? 'shadow-2xl' : ''}`}>
+      <div className={`relative w-full bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none ${isExpanded ? 'flex-grow shadow-2xl' : 'aspect-square'}`}>
         <canvas
           ref={canvasRef}
           width={800}
           height={800}
-          className="w-full h-full bg-white cursor-crosshair"
+          className="w-full h-full bg-white cursor-crosshair object-contain"
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
