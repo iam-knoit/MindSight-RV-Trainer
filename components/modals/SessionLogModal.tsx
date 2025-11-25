@@ -218,7 +218,7 @@ const SessionLogModal: React.FC<SessionLogModalProps> = ({ isOpen, onClose, hist
                         <Wand2 size={14} />
                         Visual Reconstruction
                     </h4>
-                    <div className="aspect-[4/3] bg-black rounded-xl overflow-hidden border border-slate-700 relative group">
+                    <div className="aspect-square bg-black rounded-xl overflow-hidden border border-slate-700 relative group">
                         {selectedSession.generatedImageUrl ? (
                             <img src={selectedSession.generatedImageUrl} alt="Generated" className="w-full h-full object-cover" />
                         ) : (
@@ -254,7 +254,7 @@ const SessionLogModal: React.FC<SessionLogModalProps> = ({ isOpen, onClose, hist
                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                          <Brain size={14} /> User Sketch
                     </h4>
-                    <div className="aspect-[4/3] bg-white rounded-xl overflow-hidden border border-slate-700">
+                    <div className="aspect-square bg-white rounded-xl overflow-hidden border border-slate-700">
                         {selectedSession.userSketchBase64 ? (
                             <img src={selectedSession.userSketchBase64} alt="Sketch" className="w-full h-full object-contain" />
                         ) : (

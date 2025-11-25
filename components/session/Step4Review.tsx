@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Sparkles, Image as ImageIcon, CheckCircle, ArrowLeft, ShieldCheck, Save } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -34,7 +35,7 @@ const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack, se
           <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
             <ImageIcon size={14} /> {t('sketchPreview')}
           </h3>
-          <div className="bg-white rounded-lg overflow-hidden aspect-[4/3] border border-slate-600">
+          <div className="bg-white rounded-lg overflow-hidden aspect-square border border-slate-600">
             {sketch ? (
               <img src={sketch} alt="User Sketch" className="w-full h-full object-contain" />
             ) : (

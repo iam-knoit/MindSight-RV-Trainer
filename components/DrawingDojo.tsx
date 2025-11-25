@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Pen, RotateCcw, Lock, CheckCircle2, Eye, Timer } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -114,7 +115,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
              </div>
              
              <div className="w-64 h-64 bg-white rounded-xl flex items-center justify-center mb-8">
-                <svg width="200" height="200" viewBox="0 0 300 200" className="stroke-black stroke-[8px] fill-none stroke-linecap-round stroke-linejoin-round">
+                <svg width="200" height="200" viewBox="0 0 300 300" className="stroke-black stroke-[8px] fill-none stroke-linecap-round stroke-linejoin-round">
                     <path d={currentGestalt.path} />
                 </svg>
              </div>
@@ -129,7 +130,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
         {step === 'draw' && (
            <div className="w-full h-full flex flex-col items-center animate-in fade-in duration-300">
               <h3 className="text-xl text-white font-bold mb-4">{t('drawingDojoDraw')}</h3>
-              <div className="w-full h-[400px] border border-slate-600 rounded-lg overflow-hidden bg-white">
+              <div className="w-full aspect-square max-h-[500px] border border-slate-600 rounded-lg overflow-hidden bg-white">
                  <SketchPad onExport={handleExportSketch} />
               </div>
               <button 
@@ -146,13 +147,13 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
           <div className="w-full h-full flex flex-col items-center animate-in fade-in duration-300">
              <h3 className="text-xl text-white font-bold mb-4">{t('drawingDojoCheck')}</h3>
              
-             <div className="relative w-full max-w-md aspect-[4/3] bg-white rounded-xl overflow-hidden border border-slate-600 mb-6">
+             <div className="relative w-full max-w-md aspect-square bg-white rounded-xl overflow-hidden border border-slate-600 mb-6">
                  {/* User Sketch Layer */}
                  {userSketch && <img src={userSketch} className="absolute inset-0 w-full h-full object-contain" />}
                  
                  {/* Target Overlay (Red) */}
                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-60">
-                    <svg width="100%" height="100%" viewBox="0 0 300 200" preserveAspectRatio="none" className="stroke-red-500 stroke-[8px] fill-none stroke-linecap-round stroke-linejoin-round">
+                    <svg width="100%" height="100%" viewBox="0 0 300 300" preserveAspectRatio="none" className="stroke-red-500 stroke-[8px] fill-none stroke-linecap-round stroke-linejoin-round">
                         <path d={currentGestalt.path} vectorEffect="non-scaling-stroke" />
                     </svg>
                  </div>

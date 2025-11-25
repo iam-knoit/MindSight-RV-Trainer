@@ -159,7 +159,7 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
         <canvas
           ref={canvasRef}
           width={800}
-          height={600}
+          height={800}
           className="w-full h-full bg-white cursor-crosshair"
           onMouseDown={startDrawing}
           onMouseMove={draw}

@@ -165,7 +165,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
                    isOpenSession ? t('targetInaccessible') : t('actualTarget')
                )}
             </div>
-            <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3] bg-slate-900 flex items-center justify-center flex-col">
+            <div className="relative group rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-square bg-slate-900 flex items-center justify-center flex-col">
               
               {/* DISPLAY LOGIC: 
                  1. If Training Mode -> Show Target Image
@@ -259,7 +259,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
             <div className="bg-slate-800/50 p-2 rounded-t-xl border border-slate-700 text-center text-slate-300 font-semibold">
               {t('yourSketch')}
             </div>
-            <div className="relative rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-[4/3] bg-white">
+            <div className="relative rounded-b-xl overflow-hidden border-x border-b border-slate-700 aspect-square bg-white">
               {currentSession.userSketchBase64 ? (
                 <img src={currentSession.userSketchBase64} alt="Sketch" className="w-full h-full object-contain" />
               ) : (
@@ -271,7 +271,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
       ) : (
         /* OVERLAY MODE (Only for Training) */
         <div className="w-full max-w-3xl mx-auto mb-8 animate-in zoom-in-95 duration-300">
-           <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
+           <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
               {currentSession.targetImageUrl && (
                   <img 
                   src={currentSession.targetImageUrl} 
