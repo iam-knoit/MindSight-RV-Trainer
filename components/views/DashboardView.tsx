@@ -21,11 +21,12 @@ interface DashboardViewProps {
   onRunCoachAnalysis: () => void;
   onEnterDojo: () => void;
   onShowSessionLog: () => void;
+  isHistoryLoaded: boolean;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
   user, history, coachReport, isLoading, loadingMessage, analyzingHistory,
-  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onShowSessionLog
+  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onShowSessionLog, isHistoryLoaded
 }) => {
   const { t } = useLanguage();
   const totalSeconds = history.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
@@ -98,7 +99,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {user && history.length > 0 && (
+      {user && !isHistoryLoaded && (
+        <div className="w-full flex flex-col items-center justify-center py-12 animate-in fade-in duration-500">
+           <RefreshCw className="animate-spin text-slate-600 mb-3" size={24} />
+           <p className="text-xs font-bold text-slate-600 tracking-widest uppercase">Syncing Profile Data...</p>
+        </div>
+      )}
+
+      {user && isHistoryLoaded && history.length > 0 && (
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-1000 delay-200">
           <div className="lg:col-span-2 bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative flex flex-col">
             <div className="flex justify-between items-center mb-4 flex-wrap gap-2">

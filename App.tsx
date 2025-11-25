@@ -45,6 +45,7 @@ function App() {
   const [userSketch, setUserSketch] = useState<string | null>(null);
   
   const [history, setHistory] = useState<SessionData[]>([]);
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false); // Track if history has been fetched
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(t('initializing'));
@@ -94,6 +95,7 @@ function App() {
       setUser(currentUser);
       if (!currentUser) {
         setHistory([]); 
+        setIsHistoryLoaded(false);
         setCoachReport(null);
         setIntuitionStats(null);
         setIsIntuitionLoaded(false);
@@ -106,12 +108,17 @@ function App() {
   // Database Sync Observers
   useEffect(() => {
     if (user) {
-      const unsubHistory = subscribeToHistory(user.uid, (sessions) => setHistory(sessions));
+      const unsubHistory = subscribeToHistory(user.uid, (sessions) => {
+        setHistory(sessions);
+        setIsHistoryLoaded(true);
+      });
       const unsubDojo = subscribeToIntuitionStats(user.uid, (stats) => {
         setIntuitionStats(stats);
         setIsIntuitionLoaded(true);
       });
       return () => { unsubHistory(); unsubDojo(); };
+    } else {
+      setIsHistoryLoaded(false);
     }
   }, [user]);
 
@@ -406,9 +413,13 @@ function App() {
           {user ? (
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex flex-col items-end">
-                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-0.5 border ${rankStyle.bg} ${rankStyle.border} ${rankStyle.color}`}>
-                    <RankIcon size={10} /> {t(currentRank.title)} {currentRank.division}
-                 </div>
+                 {isHistoryLoaded ? (
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-0.5 border ${rankStyle.bg} ${rankStyle.border} ${rankStyle.color}`}>
+                        <RankIcon size={10} /> {t(currentRank.title)} {currentRank.division}
+                    </div>
+                 ) : (
+                    <div className="h-[22px] w-24 bg-slate-800/50 rounded mb-0.5 animate-pulse border border-slate-700/50"></div>
+                 )}
                  <span className="text-sm font-semibold text-slate-200">{user.displayName || t('viewer')}</span>
               </div>
               {user.photoURL ? (
@@ -596,6 +607,7 @@ function App() {
             onShowAuth={() => setShowAuthModal(true)} onShowModeSelection={() => setShowModeSelection(true)} onShowAnalytics={() => setShowAnalyticsModal(true)}
             onShowChat={() => setShowChat(true)} onRunCoachAnalysis={runCoachAnalysis} onEnterDojo={() => { setIsDojoLocked(false); setState(SessionState.DOJO); }}
             onShowSessionLog={() => setShowSessionLog(true)}
+            isHistoryLoaded={isHistoryLoaded}
           />
         )}
         {state === SessionState.DOJO && (
