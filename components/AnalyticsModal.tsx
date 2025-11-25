@@ -180,14 +180,6 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
                })}
              </div>
           </div>
-          
-          <div className="mt-8 flex justify-center">
-              <p className="text-xs text-slate-500 flex items-center gap-2">
-                <Lightbulb size={14} className="text-yellow-500/50" />
-                {t('aiCoachPrompt')}
-              </p>
-          </div>
-
         </div>
       </div>
     </div>

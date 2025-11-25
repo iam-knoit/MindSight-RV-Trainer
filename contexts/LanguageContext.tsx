@@ -11,7 +11,7 @@ interface LanguageContextType {
 }
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.7.2';
+const appVersion = process.env.APP_VERSION || '2.7.3';
 
 const translations = {
   en: {
