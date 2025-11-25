@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { X, User as UserIcon, Mail, Lock, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -37,6 +38,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (err.code === 'auth/invalid-email') msg = "Invalid email address.";
       if (err.code === 'auth/user-not-found') msg = "No account found with this email.";
       if (err.code === 'auth/wrong-password') msg = "Incorrect password.";
+      if (err.code === 'auth/invalid-credential') msg = "Incorrect email or password.";
       if (err.code === 'auth/email-already-in-use') msg = "Email is already registered.";
       if (err.code === 'auth/weak-password') msg = "Password must be at least 6 characters.";
       setError(msg);

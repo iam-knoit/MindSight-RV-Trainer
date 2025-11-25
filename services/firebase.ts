@@ -47,6 +47,13 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
   console.error("Error setting auth persistence:", error);
 });
 
+// Helper to remove undefined values from objects (Firestore doesn't like undefined)
+const cleanData = (data: any) => {
+  return Object.fromEntries(
+    Object.entries(data).filter(([_, v]) => v !== undefined)
+  );
+};
+
 // --- Auth Functions ---
 
 export const registerWithEmail = async (email: string, password: string, name: string) => {
@@ -88,8 +95,12 @@ export const saveSessionToCloud = async (userId: string, session: SessionData) =
   try {
     // Use the session.id (timestamp string) as the document ID for easier updates
     const sessionRef = doc(db, 'users', userId, 'sessions', session.id);
+    
+    // Clean data to remove undefined values
+    const sanitizedSession = cleanData(session);
+    
     await setDoc(sessionRef, {
-      ...session,
+      ...sanitizedSession,
       createdAt: Timestamp.now()
     });
   } catch (error) {
@@ -123,7 +134,11 @@ export const updateSessionRemarks = async (userId: string, sessionId: string, re
 export const updateSessionData = async (userId: string, sessionId: string, data: Partial<SessionData>) => {
   try {
     const sessionRef = doc(db, 'users', userId, 'sessions', sessionId);
-    await updateDoc(sessionRef, data);
+    
+    // Clean data to remove undefined values
+    const sanitizedData = cleanData(data);
+
+    await updateDoc(sessionRef, sanitizedData);
   } catch (error) {
     console.error("Error updating session data", error);
     throw error;
@@ -149,7 +164,7 @@ export const subscribeToHistory = (userId: string, callback: (sessions: SessionD
 export const updateIntuitionStats = async (userId: string, newStats: IntuitionStats) => {
   try {
     const statsRef = doc(db, 'users', userId, 'stats', 'intuition');
-    await setDoc(statsRef, newStats, { merge: true });
+    await setDoc(statsRef, cleanData(newStats), { merge: true });
   } catch (error) {
     console.error("Error updating intuition stats", error);
   }

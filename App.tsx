@@ -147,6 +147,40 @@ const App: React.FC = () => {
   };
 
   const goHome = () => {
+    // 1. Block exit if locked in Zener Dojo
+    if (sessionState === SessionState.DOJO && isDojoLocked) {
+      alert(t('completeCalibration'));
+      return;
+    }
+
+    // 2. Block exit if locked in Drawing Dojo
+    if (sessionState === SessionState.DRAWING_DOJO && isDojoLocked) {
+      alert(t('completeCalibration'));
+      return;
+    }
+
+    // 3. Check for Low Scores in Feedback Mode (Training only)
+    if (sessionState === SessionState.FEEDBACK && currentSession?.sessionType === 'TRAINING') {
+        const score = currentSession.aiScore ?? 100;
+        const drawingScore = currentSession.drawingScore ?? 100;
+
+        // Condition A: Total Score < 50 -> Intuition Dojo
+        if (score < 50) {
+            alert(t('lowScoreRedirect'));
+            setIsDojoLocked(true);
+            setSessionState(SessionState.DOJO);
+            return;
+        } 
+        
+        // Condition B: Total Score >= 50 BUT Drawing Score < 45 -> Drawing Dojo
+        if (score >= 50 && drawingScore < 45) {
+            alert(t('lowDrawingRedirect'));
+            setIsDojoLocked(true);
+            setSessionState(SessionState.DRAWING_DOJO);
+            return;
+        }
+    }
+
     if (sessionState === SessionState.VIEWING) {
       setShowConfirmExit(true);
     } else {
@@ -417,7 +451,7 @@ const App: React.FC = () => {
                     <div>
                         <h2 className="font-bold text-white">{t(`step${step === 1 ? 'Focus' : step === 2 ? 'Impressions' : step === 3 ? 'Sketch' : 'Review'}`)}</h2>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
-                            <p className="text-xs text-slate-500 font-mono">{t('session')} #{history.length + 1} • {currentSession.sessionType === 'OPEN' ? 'OPEN' : 'BLIND'}</p>
+                            <p className="text-xs text-slate-500 font-mono">{t('session')} #{history.filter(s => s.sessionType === currentSession.sessionType).length + 1} • {currentSession.sessionType === 'OPEN' ? 'OPEN' : 'BLIND'}</p>
                             <div className="flex items-center gap-1.5 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 shadow-sm" title={t('trn')}>
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                             <span className="text-xs font-mono font-bold text-blue-200 tracking-wider">{currentSession.coordinate}</span>
