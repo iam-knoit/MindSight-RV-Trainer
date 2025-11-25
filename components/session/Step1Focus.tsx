@@ -122,7 +122,7 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-in fade-in duration-700">
+    <div className="flex flex-col items-center justify-center min-h-full text-center space-y-8 animate-in fade-in duration-700 py-8">
       
       {!isFocusing ? (
         <>
