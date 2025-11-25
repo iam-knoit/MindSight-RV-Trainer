@@ -29,9 +29,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onShowSessionLog, isHistoryLoaded
 }) => {
   const { t } = useLanguage();
-  const totalSeconds = history.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
   
-  const currentRank = calculateLevel(history);
+  // Strict filter for Performance Stats: Only Training sessions
+  const trainingHistory = history.filter(s => s.sessionType === 'TRAINING' && s.aiScore !== undefined);
+  const totalTrainingSeconds = trainingHistory.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
+  
+  const currentRank = calculateLevel(history); // calculateLevel now internally filters for TRAINING too
   const rankStyle = getRankStyle(currentRank.level);
   const RankIcon = rankStyle.icon;
 
@@ -142,7 +145,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
                 <Clock size={14} />
                 <span>{t('totalTime')}:</span>
-                <span className="text-blue-400 font-bold">{formatDuration(totalSeconds)}</span>
+                <span className="text-blue-400 font-bold">{formatDuration(totalTrainingSeconds)}</span>
               </div>
             </div>
           </div>
@@ -224,7 +227,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         <p className="text-sm font-semibold">{t('aiCoachReady')}</p>
                         <p className="text-xs mt-1 max-w-[200px]">{t('aiCoachUnlock')}</p>
                     </div>
-                    {history.length >= 3 && (
+                    {trainingHistory.length >= 3 && (
                         <button 
                         onClick={onRunCoachAnalysis}
                         disabled={analyzingHistory} 

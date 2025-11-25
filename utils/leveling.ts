@@ -1,9 +1,14 @@
+
 import { SessionData } from '../types';
 import { Sprout, Feather, BookOpen, Eye, Activity, Radio, ShieldCheck, Zap, Crown, User as UserIcon } from 'lucide-react';
 
 export const calculateLevel = (sessions: SessionData[]) => {
-  // Filter out sessions without scores (Open Sessions)
-  const validSessions = sessions.filter(s => s.aiScore !== undefined);
+  // Filter for COMPLETED TRAINING sessions only
+  // This ensures Open sessions or incomplete data don't affect the Rank/Stats
+  const validSessions = sessions.filter(s => 
+    s.aiScore !== undefined && 
+    s.sessionType === 'TRAINING'
+  );
   
   if (validSessions.length === 0) {
     return { level: 1, title: 'lvl1', division: null, progress: 0, nextThreshold: 20, avgScore: 0 };

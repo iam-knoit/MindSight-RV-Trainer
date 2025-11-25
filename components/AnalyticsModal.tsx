@@ -4,7 +4,7 @@ import { X, TrendingUp, Trophy, Clock, Activity, Target, Zap, ArrowRightCircle, 
 import { SessionData, CoachReport } from '../types';
 import HistoryChart from './HistoryChart';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getRankStyle } from '../utils/leveling';
+import { calculateLevel, getRankStyle } from '../utils/leveling';
 
 interface AnalyticsModalProps {
   isOpen: boolean;
@@ -18,13 +18,13 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
 
   if (!isOpen) return null;
 
-  // Calculate Stats - Filter for Training Sessions only to avoid skewing data with Open sessions
+  // Use the central utility for consistency. This function filters for TRAINING sessions internally.
+  const currentRank = calculateLevel(history);
+  const { avgScore, level: currentLevel } = currentRank;
+
+  // Manually calculate strict training stats for the cards to match Dashboard
   const trainingHistory = history.filter(s => s.sessionType === 'TRAINING' && s.aiScore !== undefined);
-  
   const totalSessions = trainingHistory.length;
-  const avgScore = totalSessions > 0 
-    ? Math.round(trainingHistory.reduce((acc, s) => acc + (s.aiScore || 0), 0) / totalSessions) 
-    : 0;
   const bestScore = totalSessions > 0 
     ? Math.max(...trainingHistory.map(s => s.aiScore || 0)) 
     : 0;
@@ -36,14 +36,6 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, histor
     return `${h}h ${m}m`;
   };
 
-  // Re-calculate Level for display (Logic copied to be self-contained in modal)
-  const calculateLevel = (score: number) => {
-    if (score < 20) return 1;
-    if (score >= 90) return 9;
-    return Math.floor((score - 20) / 10) + 2;
-  };
-
-  const currentLevel = calculateLevel(avgScore);
   const capabilityKey = `cap_lvl${currentLevel}`;
   const rankStyle = getRankStyle(currentLevel);
   const RankIcon = rankStyle.icon;
