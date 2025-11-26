@@ -6,10 +6,11 @@ import {
   signInWithEmailAndPassword,
   signOut, 
   updateProfile,
-  User,
   setPersistence,
   browserLocalPersistence
 } from 'firebase/auth';
+import type { User } from 'firebase/auth';
+
 import { 
   getFirestore, 
   collection, 
@@ -22,10 +23,10 @@ import {
   setDoc,
   getDoc,
   updateDoc,
-  deleteDoc,
-  QuerySnapshot,
-  DocumentData
+  deleteDoc
 } from 'firebase/firestore';
+import type { QuerySnapshot, DocumentData } from 'firebase/firestore';
+
 import { SessionData, IntuitionStats } from '../types';
 
 // Firebase configuration for MindSight RV Trainer

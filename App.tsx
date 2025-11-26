@@ -325,6 +325,11 @@ const App: React.FC = () => {
       setIsDojoLocked(false);
       setSessionState(SessionState.DOJO);
   };
+  
+  const handleEnterDrawingDojo = () => {
+      setIsDojoLocked(false);
+      setSessionState(SessionState.DRAWING_DOJO);
+  };
 
   const handleCalibrationRequired = () => {
     setIsDojoLocked(true);
@@ -433,6 +438,7 @@ const App: React.FC = () => {
                 onShowChat={() => setShowChat(true)}
                 onRunCoachAnalysis={handleRunCoach}
                 onEnterDojo={handleEnterDojo}
+                onEnterDrawingDojo={handleEnterDrawingDojo}
                 onShowSessionLog={() => setShowLog(true)}
                 isHistoryLoaded={isHistoryLoaded}
             />

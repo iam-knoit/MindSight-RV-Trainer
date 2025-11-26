@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock, Target, Lock } from 'lucide-react';
+import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock, Target, Lock, PenTool } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SessionData, CoachReport } from '../../types';
 import HistoryChart from '../HistoryChart';
@@ -19,13 +20,14 @@ interface DashboardViewProps {
   onShowChat: () => void;
   onRunCoachAnalysis: () => void;
   onEnterDojo: () => void;
+  onEnterDrawingDojo: () => void;
   onShowSessionLog: () => void;
   isHistoryLoaded: boolean;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
   user, history, coachReport, isLoading, loadingMessage, analyzingHistory,
-  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onShowSessionLog, isHistoryLoaded
+  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onEnterDrawingDojo, onShowSessionLog, isHistoryLoaded
 }) => {
   const { t } = useLanguage();
   
@@ -64,7 +66,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           {user ? t('introAuth') : t('introGuest')}
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
             {user ? (
             <button
                 type="button"
@@ -90,15 +92,25 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
             )}
 
-            {/* Intuition Dojo Button */}
+            {/* Dojo Buttons */}
             {user && (
-                <button
-                    onClick={onEnterDojo}
-                    className="px-8 py-4 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-200 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3"
-                >
-                    <Zap size={20} />
-                    {t('intuitionDojo')}
-                </button>
+                <>
+                  <button
+                      onClick={onEnterDojo}
+                      className="px-6 py-4 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-200 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3"
+                  >
+                      <Zap size={20} />
+                      {t('intuitionDojo')}
+                  </button>
+                  
+                  <button
+                      onClick={onEnterDrawingDojo}
+                      className="px-6 py-4 bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 text-cyan-200 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3"
+                  >
+                      <PenTool size={20} />
+                      {t('drawingDojo')}
+                  </button>
+                </>
             )}
         </div>
       </div>
