@@ -1,4 +1,3 @@
-
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -23,9 +22,10 @@ import {
   setDoc,
   getDoc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  QuerySnapshot,
+  DocumentData
 } from 'firebase/firestore';
-import type { QuerySnapshot, DocumentData } from 'firebase/firestore';
 
 import { SessionData, IntuitionStats } from '../types';
 

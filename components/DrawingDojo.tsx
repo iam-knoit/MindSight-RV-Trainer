@@ -114,35 +114,46 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
       </div>
 
       {/* Main Area */}
-      <div className="w-full max-w-2xl bg-slate-900/50 rounded-3xl border border-slate-800 p-8 shadow-inner flex flex-col items-center relative min-h-[500px]">
+      <div className="w-full max-w-3xl bg-slate-900/50 rounded-3xl border border-slate-800 p-4 md:p-8 shadow-inner flex flex-col items-center relative min-h-[600px] justify-center">
         
         {/* Phase 1: Memorize */}
         {step === 'memorize' && (
-          <div className="flex flex-col items-center justify-center h-full animate-in zoom-in duration-300">
-             <div className="mb-8">
-               <Eye size={48} className="text-blue-400 mx-auto mb-4 animate-pulse" />
-               <p className="text-xl text-white font-bold">{t('drawingDojoInstruct')}</p>
+          <div className="w-full flex flex-col items-center justify-center animate-in zoom-in duration-300">
+             <div className="mb-6 flex flex-col items-center text-center">
+               <Eye size={32} className="text-blue-400 mb-2 animate-pulse" />
+               <p className="text-lg text-white font-bold">{t('drawingDojoInstruct')}</p>
+               <p className="text-sm text-slate-500">Stare at the center. Absorb the whole shape.</p>
              </div>
              
-             <div className="w-64 h-64 bg-white rounded-xl flex items-center justify-center mb-8 p-4">
-                <svg width="200" height="200" viewBox="0 0 300 300" className="stroke-black stroke-[6px] fill-none stroke-linecap-round stroke-linejoin-round">
+             {/* 
+                MATCHING CONTAINER SIZE: 
+                SketchPad uses max-w-[500px] roughly (controlled by user CSS or container).
+                We set a fixed max-width here to match the "Draw" phase.
+             */}
+             <div className="w-full max-w-[500px] aspect-square bg-white rounded-xl border-4 border-slate-800 flex items-center justify-center relative shadow-2xl overflow-hidden mx-auto">
+                {/* SVG Fills the container exactly like the Canvas will */}
+                <svg viewBox="0 0 300 300" className="w-full h-full stroke-black stroke-[6px] fill-none stroke-linecap-round stroke-linejoin-round" preserveAspectRatio="xMidYMid meet">
                     <path d={currentGestalt.path} />
                 </svg>
-             </div>
 
-             <div className="flex items-center gap-2 text-4xl font-mono font-bold text-blue-400">
-                <Timer size={32} /> {timer}s
+                {/* Timer Overlay - Positioned to not obstruct shape */}
+                <div className="absolute top-4 right-4 bg-slate-900/90 text-blue-400 px-4 py-2 rounded-full font-mono text-xl font-bold backdrop-blur-sm border border-slate-700 flex items-center gap-2 shadow-lg">
+                    <Timer size={18} /> {timer}s
+                </div>
              </div>
           </div>
         )}
 
         {/* Phase 2: Draw */}
         {step === 'draw' && (
-           <div className="w-full h-full flex flex-col items-center animate-in fade-in duration-300">
+           <div className="w-full flex flex-col items-center animate-in fade-in duration-300">
               <h3 className="text-xl text-white font-bold mb-4">{t('drawingDojoDraw')}</h3>
-              <div className="w-full max-w-[500px]">
+              
+              {/* Wrapped to match Memorize dimensions */}
+              <div className="w-full max-w-[500px] mx-auto">
                  <SketchPad onExport={handleExportSketch} />
               </div>
+
               <button 
                 onClick={handleCheck}
                 className="mt-6 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold shadow-lg transition-all"
@@ -154,17 +165,21 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
 
         {/* Phase 3: Check */}
         {step === 'check' && (
-          <div className="w-full h-full flex flex-col items-center animate-in fade-in duration-300">
+          <div className="w-full flex flex-col items-center animate-in fade-in duration-300">
              <h3 className="text-xl text-white font-bold mb-4">{t('drawingDojoCheck')}</h3>
              
-             <div className="relative w-full max-w-md aspect-square bg-white rounded-xl overflow-hidden border border-slate-600 mb-6">
+             {/* 
+                MATCHING CONTAINER SIZE: 
+                Same dimensions as Memorize and Draw phases for accurate comparison.
+             */}
+             <div className="relative w-full max-w-[500px] aspect-square bg-white rounded-xl overflow-hidden border-4 border-slate-800 mb-6 shadow-2xl mx-auto">
                  {/* User Sketch Layer */}
-                 {userSketch && <img src={userSketch} className="absolute inset-0 w-full h-full object-contain" />}
+                 {userSketch && <img src={userSketch} className="absolute inset-0 w-full h-full object-contain" alt="User Sketch" />}
                  
-                 {/* Target Overlay (Red) */}
+                 {/* Target Overlay (Red) - Fills container to align coordinate systems */}
                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-60">
-                    <svg width="100%" height="100%" viewBox="0 0 300 300" preserveAspectRatio="none" className="stroke-red-500 stroke-[8px] fill-none stroke-linecap-round stroke-linejoin-round">
-                        <path d={currentGestalt.path} vectorEffect="non-scaling-stroke" />
+                    <svg viewBox="0 0 300 300" className="w-full h-full stroke-red-600 stroke-[6px] fill-none stroke-linecap-round stroke-linejoin-round" preserveAspectRatio="xMidYMid meet">
+                        <path d={currentGestalt.path} />
                     </svg>
                  </div>
              </div>
