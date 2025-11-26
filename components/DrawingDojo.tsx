@@ -9,14 +9,24 @@ interface DrawingDojoProps {
   lockedMode?: boolean;
 }
 
-// Simple Gestalt Shapes (SVG Paths)
+// Complex Gestalt Shapes (SVG Paths) - Updated for higher difficulty
 const GESTALTS = [
-  { id: 1, path: "M50,150 Q100,50 150,150 T250,150", name: "Wave" }, // Wave
-  { id: 2, path: "M50,150 L100,50 L150,150 L200,50 L250,150", name: "Peaks" }, // Peaks
-  { id: 3, path: "M50,50 L250,50 L250,150 L50,150 Z", name: "Structure" }, // Box
-  { id: 4, path: "M150,50 A100,100 0 1,1 150,250 A100,100 0 1,1 150,50", name: "Enclosure" }, // Circle
-  { id: 5, path: "M50,150 L250,50", name: "Slope" }, // Slope
-  { id: 6, path: "M50,50 Q150,250 250,50", name: "Valley" } // U-shape
+  // Asymmetrical Polygon
+  { id: 1, path: "M50,50 L220,80 L280,200 L100,250 L20,150 Z", name: "Irregular Pentagon" },
+  // Orthogonal Maze
+  { id: 2, path: "M50,50 H250 V150 H150 V250 H50 V150", name: "C-Block Maze" },
+  // Sigil
+  { id: 3, path: "M150,20 L250,250 L20,100 L280,100 L50,250 Z", name: "Star Glyph" },
+  // Abstract Curves
+  { id: 4, path: "M50,250 C50,50 150,50 150,150 S 250,250 250,150", name: "Compound Curve" },
+  // Compound Geometrics (Disjointed)
+  { id: 5, path: "M50,50 L150,50 L150,150 L50,150 Z M180,180 A50,50 0 1,0 280,180 A50,50 0 1,0 180,180", name: "Square & Circle" },
+  // Intersecting Axes
+  { id: 6, path: "M20,20 L280,280 M280,20 L20,280 M150,20 L150,280", name: "Asterisk" },
+  // The "Rune"
+  { id: 7, path: "M80,20 L80,280 M80,80 L220,40 M80,220 L220,180", name: "Rune" },
+  // Nested Triangle
+  { id: 8, path: "M150,20 L280,250 H20 Z M150,80 L220,200 H80 Z", name: "Eye of Providence" }
 ];
 
 const TARGET_STREAK = 3;
@@ -26,7 +36,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
   
   const [step, setStep] = useState<'memorize' | 'draw' | 'check'>('memorize');
   const [currentGestalt, setCurrentGestalt] = useState(GESTALTS[0]);
-  const [timer, setTimer] = useState(3);
+  const [timer, setTimer] = useState(2); // Reduced from 3s to 2s for difficulty
   const [streak, setStreak] = useState(0);
   const [userSketch, setUserSketch] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState(false);
@@ -57,7 +67,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
   const pickNewGestalt = () => {
     const random = Math.floor(Math.random() * GESTALTS.length);
     setCurrentGestalt(GESTALTS[random]);
-    setTimer(3);
+    setTimer(2); // Reset to 2s
     setStep('memorize');
     setUserSketch(null);
   };
@@ -114,8 +124,8 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
                <p className="text-xl text-white font-bold">{t('drawingDojoInstruct')}</p>
              </div>
              
-             <div className="w-64 h-64 bg-white rounded-xl flex items-center justify-center mb-8">
-                <svg width="200" height="200" viewBox="0 0 300 300" className="stroke-black stroke-[8px] fill-none stroke-linecap-round stroke-linejoin-round">
+             <div className="w-64 h-64 bg-white rounded-xl flex items-center justify-center mb-8 p-4">
+                <svg width="200" height="200" viewBox="0 0 300 300" className="stroke-black stroke-[6px] fill-none stroke-linecap-round stroke-linejoin-round">
                     <path d={currentGestalt.path} />
                 </svg>
              </div>
