@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Pen, RotateCcw, Lock, CheckCircle2, Eye, Timer, Loader2, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RotateCcw, Lock, CheckCircle2, Eye, Timer, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import SketchPad from './SketchPad';
-import { evaluateDojoSketch } from '../services/geminiService';
 
 interface DrawingDojoProps {
   onClose: () => void;
@@ -35,21 +34,17 @@ const TARGET_STREAK = 3;
 const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }) => {
   const { t } = useLanguage();
   
-  const [step, setStep] = useState<'memorize' | 'draw' | 'analyzing' | 'check'>('memorize');
+  const [step, setStep] = useState<'memorize' | 'draw' | 'check'>('memorize');
   const [currentGestalt, setCurrentGestalt] = useState(GESTALTS[0]);
   const [timer, setTimer] = useState(2);
   const [streak, setStreak] = useState(0);
   const [userSketch, setUserSketch] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState(false);
   
-  // AI / Manual Results
+  // Results
   const [isMatch, setIsMatch] = useState(false);
-  const [aiFeedback, setAiFeedback] = useState('');
   const [manualCheckMode, setManualCheckMode] = useState(false);
   
-  // Hidden canvas for rasterization
-  const hiddenCanvasRef = useRef<HTMLCanvasElement>(null);
-
   useEffect(() => {
     pickNewGestalt();
   }, []);
@@ -80,7 +75,6 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
     setStep('memorize');
     setUserSketch(null);
     setIsMatch(false);
-    setAiFeedback('');
     setManualCheckMode(false);
   };
 
@@ -88,61 +82,10 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
     setUserSketch(base64);
   };
 
-  // Helper to turn SVG path into base64 image
-  const renderTargetToImage = (): string | null => {
-    const canvas = hiddenCanvasRef.current;
-    if (!canvas) return null;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
-    // Clear and set background white
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw Path
-    const p = new Path2D(currentGestalt.path);
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke(p);
-
-    return canvas.toDataURL('image/png');
-  };
-
-  const handleCheck = async () => {
-    if (!userSketch) return; // Wait for sketch
-    setStep('analyzing');
-    setManualCheckMode(false);
-
-    try {
-        const targetBase64 = renderTargetToImage();
-        if (!targetBase64) throw new Error("Could not render target");
-
-        const result = await evaluateDojoSketch(targetBase64, userSketch);
-        
-        if (result.error) {
-           // Fallback to manual mode on error (Rate Limit)
-           setManualCheckMode(true);
-           setAiFeedback("AI Busy (Rate Limit). Please self-evaluate.");
-        } else {
-           setIsMatch(result.isMatch);
-           setAiFeedback(result.feedback);
-           
-           if (result.isMatch) {
-               setStreak(s => s + 1);
-           } else {
-               setStreak(0);
-           }
-        }
-    } catch (e) {
-        console.error("Dojo Analysis Failed", e);
-        setManualCheckMode(true);
-        setAiFeedback("Connection unavailable. Please self-evaluate.");
-    } finally {
-        setStep('check');
-    }
+  const handleCheck = () => {
+    if (!userSketch) return;
+    setManualCheckMode(true);
+    setStep('check');
   };
 
   const handleManualResult = (result: 'match' | 'miss') => {
@@ -153,9 +96,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
           setIsMatch(false);
           setStreak(0);
       }
-      setManualCheckMode(false); // Disable manual mode so we show the "Next" button logic
-      // Immediately proceed or just show the result state? 
-      // Let's show the result state so they see the streak update, then they can click Next.
+      setManualCheckMode(false);
   };
 
   const handleContinue = () => {
@@ -165,9 +106,6 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-4xl mx-auto p-4 animate-in fade-in duration-500">
       
-      {/* Hidden Canvas for rasterization (300x300 matches SVG viewBox) */}
-      <canvas ref={hiddenCanvasRef} width={300} height={300} className="hidden" />
-
       {/* Header */}
       <div className="text-center mb-6 relative w-full">
         <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">
@@ -229,15 +167,6 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
            </div>
         )}
 
-        {/* Phase 2.5: Analyzing */}
-        {step === 'analyzing' && (
-           <div className="w-full flex flex-col items-center justify-center h-full min-h-[500px] animate-in fade-in duration-300">
-              <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-6" />
-              <h3 className="text-2xl font-bold text-white mb-2">Analyzing Geometry...</h3>
-              <p className="text-slate-400">Comparing topology and alignment.</p>
-           </div>
-        )}
-
         {/* Phase 3: Check Result */}
         {step === 'check' && (
           <div className="w-full flex flex-col items-center animate-in fade-in duration-300">
@@ -252,8 +181,8 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
              )}
 
              {manualCheckMode && (
-                 <div className="mb-4 px-4 py-2 rounded-full border border-yellow-500/50 bg-yellow-900/20 text-yellow-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                     <AlertCircle size={16} /> SELF-EVALUATION REQUIRED
+                 <div className="mb-4 px-4 py-2 rounded-full border border-blue-500/50 bg-blue-900/20 text-blue-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
+                     <AlertCircle size={16} /> COMPARE & VERIFY
                  </div>
              )}
 
@@ -267,11 +196,6 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
                         <path d={currentGestalt.path} />
                     </svg>
                  </div>
-
-                 {/* Feedback Text Overlay */}
-                 <div className="absolute bottom-0 inset-x-0 bg-slate-900/90 p-4 text-center">
-                    <p className="text-slate-200 text-sm font-medium">"{aiFeedback}"</p>
-                 </div>
              </div>
              
              {manualCheckMode ? (
@@ -280,13 +204,13 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
                         onClick={() => handleManualResult('miss')}
                         className="px-6 py-3 bg-red-900/40 hover:bg-red-800 border border-red-500/50 text-red-200 rounded-xl font-bold transition-all flex items-center gap-2"
                      >
-                        <ThumbsDown size={18} /> I Missed
+                        <ThumbsDown size={18} /> Miss
                      </button>
                      <button 
                         onClick={() => handleManualResult('match')}
                         className="px-6 py-3 bg-green-900/40 hover:bg-green-800 border border-green-500/50 text-green-200 rounded-xl font-bold transition-all flex items-center gap-2"
                      >
-                        <ThumbsUp size={18} /> I Matched
+                        <ThumbsUp size={18} /> Match
                      </button>
                  </div>
              ) : (
