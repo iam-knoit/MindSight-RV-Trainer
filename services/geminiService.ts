@@ -521,3 +521,81 @@ export const createCoachChat = (history: SessionData[], language: 'en' | 'si' = 
     }
   });
 };
+
+export const evaluateDojoSketch = async (
+  targetBase64: string,
+  userSketchBase64: string
+): Promise<{ isMatch: boolean; feedback: string; error?: boolean }> => {
+  if (!process.env.API_KEY) throw new Error("API Key is missing");
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const parts: any[] = [];
+
+  parts.push({
+    inlineData: {
+      mimeType: "image/png",
+      data: cleanBase64(targetBase64),
+    },
+  });
+  parts.push({ text: "IMAGE A: TARGET SHAPE" });
+
+  parts.push({
+    inlineData: {
+      mimeType: "image/png",
+      data: cleanBase64(userSketchBase64),
+    },
+  });
+  parts.push({ text: "IMAGE B: USER ATTEMPT" });
+
+  parts.push({
+    text: `
+      You are an automated geometry evaluator.
+      Compare IMAGE B (User Attempt) to IMAGE A (Target Shape).
+      
+      CRITERIA FOR MATCH:
+      1. Topology: Does it have the same number of corners/curves/features?
+      2. Orientation: Is it roughly upright?
+      3. Structure: Is the general "gestalt" recognizable?
+      
+      ALLOWANCES:
+      - Ignore messy lines, jitter, or hand-tremor.
+      - Ignore differences in line thickness.
+      - Ignore position translation (offset) within the canvas.
+      - Ignore moderate scale differences (size).
+      
+      Task: Determine if the user successfully replicated the shape.
+      
+      Respond in JSON:
+      - isMatch: boolean (true if recognizable, false if completely wrong or missing features).
+      - feedback: A very short 1-sentence reason (e.g. "Good match, slight tilt." or "Missing the inner triangle.").
+    `
+  });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: { parts },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            isMatch: { type: Type.BOOLEAN },
+            feedback: { type: Type.STRING }
+          },
+          required: ["isMatch", "feedback"]
+        }
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text);
+    } else {
+      throw new Error("Empty response from AI Dojo Evaluator");
+    }
+  } catch (error) {
+    console.error("Dojo evaluation failed:", error);
+    // Return error flag to trigger manual fallback UI in the Dojo component
+    return { isMatch: false, feedback: "AI busy (Rate Limit). Self-check required.", error: true };
+  }
+};

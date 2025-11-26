@@ -10,22 +10,7 @@ import {
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  query, 
-  orderBy, 
-  onSnapshot,
-  Timestamp,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  QuerySnapshot,
-  DocumentData
-} from 'firebase/firestore';
+import * as firestore from 'firebase/firestore';
 
 import { SessionData, IntuitionStats } from '../types';
 
@@ -43,7 +28,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = firestore.getFirestore(app);
 
 // Explicitly set persistence to local storage to keep users logged in
 setPersistence(auth, browserLocalPersistence).catch((error) => {
@@ -97,14 +82,14 @@ export const logOut = async () => {
 export const saveSessionToCloud = async (userId: string, session: SessionData) => {
   try {
     // Use the session.id (timestamp string) as the document ID for easier updates
-    const sessionRef = doc(db, 'users', userId, 'sessions', session.id);
+    const sessionRef = firestore.doc(db, 'users', userId, 'sessions', session.id);
     
     // Clean data to remove undefined values
     const sanitizedSession = cleanData(session);
     
-    await setDoc(sessionRef, {
+    await firestore.setDoc(sessionRef, {
       ...sanitizedSession,
-      createdAt: Timestamp.now()
+      createdAt: firestore.Timestamp.now()
     });
   } catch (error) {
     console.error("Error saving session to cloud", error);
@@ -114,8 +99,8 @@ export const saveSessionToCloud = async (userId: string, session: SessionData) =
 
 export const deleteSession = async (userId: string, sessionId: string) => {
   try {
-    const sessionRef = doc(db, 'users', userId, 'sessions', sessionId);
-    await deleteDoc(sessionRef);
+    const sessionRef = firestore.doc(db, 'users', userId, 'sessions', sessionId);
+    await firestore.deleteDoc(sessionRef);
   } catch (error) {
     console.error("Error deleting session", error);
     throw error;
@@ -124,8 +109,8 @@ export const deleteSession = async (userId: string, sessionId: string) => {
 
 export const updateSessionRemarks = async (userId: string, sessionId: string, remarks: string) => {
   try {
-    const sessionRef = doc(db, 'users', userId, 'sessions', sessionId);
-    await updateDoc(sessionRef, {
+    const sessionRef = firestore.doc(db, 'users', userId, 'sessions', sessionId);
+    await firestore.updateDoc(sessionRef, {
       postSessionRemarks: remarks
     });
   } catch (error) {
@@ -136,12 +121,12 @@ export const updateSessionRemarks = async (userId: string, sessionId: string, re
 
 export const updateSessionData = async (userId: string, sessionId: string, data: Partial<SessionData>) => {
   try {
-    const sessionRef = doc(db, 'users', userId, 'sessions', sessionId);
+    const sessionRef = firestore.doc(db, 'users', userId, 'sessions', sessionId);
     
     // Clean data to remove undefined values
     const sanitizedData = cleanData(data);
 
-    await updateDoc(sessionRef, sanitizedData);
+    await firestore.updateDoc(sessionRef, sanitizedData);
   } catch (error) {
     console.error("Error updating session data", error);
     throw error;
@@ -149,14 +134,14 @@ export const updateSessionData = async (userId: string, sessionId: string, data:
 };
 
 export const subscribeToHistory = (userId: string, callback: (sessions: SessionData[]) => void) => {
-  const sessionsRef = collection(db, 'users', userId, 'sessions');
+  const sessionsRef = firestore.collection(db, 'users', userId, 'sessions');
   // Order by timestamp descending (newest first)
-  const q = query(sessionsRef, orderBy('timestamp', 'asc'));
+  const q = firestore.query(sessionsRef, firestore.orderBy('timestamp', 'asc'));
 
-  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+  return firestore.onSnapshot(q, (snapshot) => {
     const sessions: SessionData[] = [];
-    snapshot.forEach((doc) => {
-      sessions.push(doc.data() as SessionData);
+    snapshot.forEach((docSnap) => {
+      sessions.push(docSnap.data() as SessionData);
     });
     callback(sessions);
   });
@@ -166,18 +151,18 @@ export const subscribeToHistory = (userId: string, callback: (sessions: SessionD
 
 export const updateIntuitionStats = async (userId: string, newStats: IntuitionStats) => {
   try {
-    const statsRef = doc(db, 'users', userId, 'stats', 'intuition');
-    await setDoc(statsRef, cleanData(newStats), { merge: true });
+    const statsRef = firestore.doc(db, 'users', userId, 'stats', 'intuition');
+    await firestore.setDoc(statsRef, cleanData(newStats), { merge: true });
   } catch (error) {
     console.error("Error updating intuition stats", error);
   }
 };
 
 export const subscribeToIntuitionStats = (userId: string, callback: (stats: IntuitionStats | null) => void) => {
-  const statsRef = doc(db, 'users', userId, 'stats', 'intuition');
-  return onSnapshot(statsRef, (doc) => {
-    if (doc.exists()) {
-      callback(doc.data() as IntuitionStats);
+  const statsRef = firestore.doc(db, 'users', userId, 'stats', 'intuition');
+  return firestore.onSnapshot(statsRef, (docSnap) => {
+    if (docSnap.exists()) {
+      callback(docSnap.data() as IntuitionStats);
     } else {
       callback(null);
     }
