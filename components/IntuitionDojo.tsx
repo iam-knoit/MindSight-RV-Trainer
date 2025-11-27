@@ -101,6 +101,19 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lo
     }, 2000);
   };
 
+  const handleExit = () => {
+    // Reset streak to 0 when exiting the Dojo session
+    // This ensures that "current streak" represents the active session performance
+    const resetStats = { ...stats, currentStreak: 0 };
+    setStats(resetStats);
+    
+    if (auth.currentUser) {
+      updateIntuitionStats(auth.currentUser.uid, resetStats);
+    }
+    
+    onClose();
+  };
+
   const accuracy = stats.totalGuesses > 0 
     ? Math.round((stats.correctGuesses / stats.totalGuesses) * 100) 
     : 0;
@@ -210,7 +223,7 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lo
       </div>
 
       <button 
-        onClick={onClose}
+        onClick={handleExit}
         disabled={lockedMode && !unlocked}
         className={`mt-12 flex items-center gap-2 transition-colors ${lockedMode && !unlocked ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-white'}`}
       >

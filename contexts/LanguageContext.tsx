@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.7.5';
+const appVersion = process.env.APP_VERSION || '2.7.6';
 
 type Language = 'en' | 'si';
 
