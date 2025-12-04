@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.7.7';
+const appVersion = process.env.APP_VERSION || '2.7.8';
 
 type Language = 'en' | 'si';
 
@@ -97,7 +97,7 @@ const translations: Record<Language, Record<string, string>> = {
     "expandCanvas": "Expand Canvas",
     "clearCanvas": "Clear Canvas",
     "sketchInstruction": "Use your finger or mouse to draw your visual impressions.",
-    "accuracyTrend": "Accuracy Trend (Last 20 Sessions)",
+    "accuracyTrend": "Accuracy Trend",
     "exitSession": "Exit Session",
     "confirmExit": "Are you sure you want to exit? Your current session data will be lost.",
     "stepFocus": "Focus",
