@@ -1,3 +1,4 @@
+
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -20,7 +21,9 @@ import {
   query, 
   orderBy, 
   onSnapshot, 
-  Timestamp 
+  Timestamp,
+  QuerySnapshot,
+  DocumentData
 } from 'firebase/firestore';
 
 import { SessionData, IntuitionStats } from '../types';
@@ -149,7 +152,7 @@ export const subscribeToHistory = (userId: string, callback: (sessions: SessionD
   // Order by timestamp descending (newest first)
   const q = query(sessionsRef, orderBy('timestamp', 'asc'));
 
-  return onSnapshot(q, (snapshot) => {
+  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
     const sessions: SessionData[] = [];
     snapshot.forEach((docSnap) => {
       sessions.push(docSnap.data() as SessionData);

@@ -1,27 +1,34 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2, Tag } from 'lucide-react';
+import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2, Tag, Grid3X3, Image as ImageIcon } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SketchPadProps {
   onExport: (base64: string) => void;
   disabled?: boolean;
   guidanceTags?: string[];
+  traceImage?: string | null; // Optional SVG/Image data to trace over
 }
 
-const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guidanceTags = [] }) => {
+const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guidanceTags = [], traceImage = null }) => {
   const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
   const [lineWidth, setLineWidth] = useState(2);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  
+  // Undo History State
+  const [history, setHistory] = useState<ImageData[]>([]);
+  const [historyStep, setHistoryStep] = useState(-1);
 
   // Initialize canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     // Set white background initially
@@ -31,7 +38,48 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
     // Setup lines
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+
+    // Save initial blank state
+    saveState();
   }, []);
+
+  const saveState = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // If we are in the middle of history and draw, truncate future
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(imageData);
+    
+    // Limit history size to 20 steps to save memory
+    if (newHistory.length > 20) {
+        newHistory.shift();
+    } else {
+        setHistoryStep(newHistory.length - 1);
+    }
+    setHistory(newHistory);
+    
+    // Trigger export
+    onExport(canvas.toDataURL('image/png'));
+  };
+
+  const undo = () => {
+      if (historyStep <= 0) return; // Keep at least the initial blank state
+      const newStep = historyStep - 1;
+      setHistoryStep(newStep);
+      
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.putImageData(history[newStep], 0, 0);
+      onExport(canvas.toDataURL('image/png'));
+  };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (disabled) return;
@@ -67,10 +115,7 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
   const stopDrawing = () => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      onExport(canvas.toDataURL('image/png'));
-    }
+    saveState(); // Save to history on mouse up
   };
 
   const getCoordinates = (
@@ -105,13 +150,13 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
     if (!ctx) return;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    onExport(canvas.toDataURL('image/png'));
+    saveState();
   };
 
   return (
     <div className={`flex flex-col gap-2 transition-all duration-300 ${isExpanded ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'w-full'}`}>
-      <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700 shadow-lg shrink-0">
-        <div className="flex gap-2">
+      <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700 shadow-lg shrink-0 overflow-x-auto custom-scrollbar">
+        <div className="flex gap-2 items-center">
           <button
             onClick={() => setTool('pen')}
             className={`p-2 rounded-md transition-colors ${tool === 'pen' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
@@ -126,17 +171,37 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
           >
             <Eraser size={18} />
           </button>
+          
+          <div className="h-6 w-px bg-slate-600 mx-1"></div>
+          
+          <button
+            onClick={undo}
+            disabled={historyStep <= 0}
+            className={`p-2 rounded-md transition-colors ${historyStep <= 0 ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+            title="Undo"
+          >
+            <Undo size={18} />
+          </button>
+
+          <button
+            onClick={() => setShowGrid(!showGrid)}
+            className={`p-2 rounded-md transition-colors ${showGrid ? 'bg-blue-900/40 text-blue-300 border border-blue-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+            title="Toggle Grid"
+          >
+            <Grid3X3 size={18} />
+          </button>
+
           <input 
             type="range" 
             min="1" 
             max="10" 
             value={lineWidth} 
             onChange={(e) => setLineWidth(parseInt(e.target.value))}
-            className="w-20 mx-2 accent-blue-500"
+            className="w-16 mx-2 accent-blue-500 hidden sm:block"
             title="Brush Size"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 pl-4">
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={`p-2 rounded-md transition-colors ${isExpanded ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
@@ -168,13 +233,42 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
         </div>
       )}
 
-      {/* Canvas Container: Ensures 1:1 Aspect Ratio even in Expanded Mode */}
-      <div className={`relative bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none mx-auto ${isExpanded ? 'flex-grow w-full flex items-center justify-center' : 'w-full aspect-square'}`}>
+      {/* Canvas Container */}
+      <div 
+        ref={containerRef}
+        className={`relative bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none mx-auto ${isExpanded ? 'flex-grow w-full flex items-center justify-center' : 'w-full aspect-square'}`}
+      >
+        {/* Optional Tracing Underlay */}
+        {traceImage && (
+             <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-8 opacity-30 select-none">
+                  {/* We render this as an SVG via img tag. The opacity makes it faint. */}
+                  {traceImage.startsWith('<svg') || traceImage.startsWith('data:image/svg') ? (
+                     <img src={`data:image/svg+xml;utf8,${encodeURIComponent(traceImage)}`} className="w-full h-full object-contain" alt="Trace Target" />
+                  ) : (
+                     // If it's a raw path string (from GESTALTS constant), we wrap it in basic SVG
+                     <svg viewBox="0 0 300 300" className="w-full h-full stroke-black stroke-[4px] fill-none" preserveAspectRatio="xMidYMid meet">
+                        <path d={traceImage} />
+                     </svg>
+                  )}
+             </div>
+        )}
+
+        {/* Grid Overlay (Pointer events none so we can draw through it) */}
+        {showGrid && (
+            <div 
+                className="absolute inset-0 pointer-events-none z-10 opacity-20"
+                style={{
+                    backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`,
+                    backgroundSize: '50px 50px'
+                }}
+            />
+        )}
+
         <canvas
           ref={canvasRef}
           width={800}
           height={800}
-          className={`bg-white cursor-crosshair object-contain ${isExpanded ? 'max-w-full max-h-full aspect-square' : 'w-full h-full'}`}
+          className={`bg-transparent cursor-crosshair object-contain relative z-20 ${isExpanded ? 'max-w-full max-h-full aspect-square' : 'w-full h-full'}`}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -185,8 +279,9 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
         />
       </div>
       {!isExpanded && (
-        <div className="text-xs text-slate-500 text-center">
-            {t('sketchInstruction')}
+        <div className="text-xs text-slate-500 text-center flex justify-between items-center px-2">
+            <span>{t('sketchInstruction')}</span>
+            <span className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400">800x800px</span>
         </div>
       )}
     </div>

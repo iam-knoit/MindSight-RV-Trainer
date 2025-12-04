@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Lock, CheckCircle2, Eye, Timer, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react';
+import { RotateCcw, Lock, CheckCircle2, Eye, Timer, ThumbsUp, ThumbsDown, AlertCircle, PenTool, BrainCircuit } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import SketchPad from './SketchPad';
 
@@ -34,6 +33,7 @@ const TARGET_STREAK = 3;
 const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }) => {
   const { t } = useLanguage();
   
+  const [mode, setMode] = useState<'practice' | 'challenge'>('challenge');
   const [step, setStep] = useState<'memorize' | 'draw' | 'check'>('memorize');
   const [currentGestalt, setCurrentGestalt] = useState(GESTALTS[0]);
   const [timer, setTimer] = useState(2);
@@ -47,18 +47,18 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
   
   useEffect(() => {
     pickNewGestalt();
-  }, []);
+  }, [mode]);
 
-  // Check unlock condition
+  // Check unlock condition (only counts in Challenge Mode)
   useEffect(() => {
     if (lockedMode && streak >= TARGET_STREAK) {
       setUnlocked(true);
     }
   }, [streak, lockedMode]);
 
-  // Countdown for Memorization Phase
+  // Countdown for Memorization Phase (Challenge Mode Only)
   useEffect(() => {
-    if (step === 'memorize') {
+    if (mode === 'challenge' && step === 'memorize') {
       if (timer > 0) {
         const interval = setInterval(() => setTimer(t => t - 1), 1000);
         return () => clearInterval(interval);
@@ -66,13 +66,14 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
         setStep('draw');
       }
     }
-  }, [step, timer]);
+  }, [step, timer, mode]);
 
   const pickNewGestalt = () => {
     const random = Math.floor(Math.random() * GESTALTS.length);
     setCurrentGestalt(GESTALTS[random]);
     setTimer(2);
-    setStep('memorize');
+    // In practice mode, we skip memorization and go straight to drawing with trace overlay
+    setStep(mode === 'practice' ? 'draw' : 'memorize');
     setUserSketch(null);
     setIsMatch(false);
     setManualCheckMode(false);
@@ -91,16 +92,26 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
   const handleManualResult = (result: 'match' | 'miss') => {
       if (result === 'match') {
           setIsMatch(true);
-          setStreak(s => s + 1);
+          if (mode === 'challenge') setStreak(s => s + 1);
       } else {
           setIsMatch(false);
-          setStreak(0);
+          if (mode === 'challenge') setStreak(0);
       }
       setManualCheckMode(false);
   };
 
   const handleContinue = () => {
     pickNewGestalt();
+  };
+
+  const toggleMode = () => {
+      // Don't allow toggling if locked and not complete
+      if (lockedMode && !unlocked && mode === 'challenge') {
+          alert("You must complete the calibration in Challenge mode.");
+          return;
+      }
+      setMode(prev => prev === 'challenge' ? 'practice' : 'challenge');
+      setStreak(0);
   };
 
   return (
@@ -111,9 +122,33 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
         <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">
           {t('drawingDojoTitle')}
         </h2>
-        <p className="text-slate-400 mb-4">{t('drawingDojoDesc')}</p>
         
-        {lockedMode && (
+        {/* Mode Toggle */}
+        <div className="flex justify-center mb-6">
+            <div className="bg-slate-800 p-1 rounded-xl flex border border-slate-700">
+                <button
+                    onClick={() => setMode('practice')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${mode === 'practice' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <PenTool size={16} /> Practice
+                </button>
+                <button
+                    onClick={() => {
+                         if (lockedMode && !unlocked) {
+                            // Can always switch TO challenge mode if locked, but maybe warn if switching away?
+                            // Logic handled in toggleMode for switching AWAY
+                         }
+                         setMode('challenge');
+                         setStreak(0);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${mode === 'challenge' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <BrainCircuit size={16} /> Challenge
+                </button>
+            </div>
+        </div>
+
+        {lockedMode && mode === 'challenge' && (
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${unlocked ? 'bg-green-900/30 border-green-500 text-green-400' : 'bg-red-900/30 border-red-500 text-red-400 animate-pulse'}`}>
             {unlocked ? <CheckCircle2 size={16} /> : <Lock size={16} />}
             <span className="text-sm font-bold">
@@ -126,11 +161,11 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
       {/* Main Area */}
       <div className="w-full max-w-3xl bg-slate-900/50 rounded-3xl border border-slate-800 p-4 md:p-8 shadow-inner flex flex-col items-center relative min-h-[600px] justify-center">
         
-        {/* Phase 1: Memorize */}
+        {/* Phase 1: Memorize (Challenge Only) */}
         {step === 'memorize' && (
           <div className="w-full flex flex-col items-center justify-center animate-in zoom-in duration-300">
              <div className="mb-6 flex flex-col items-center text-center">
-               <Eye size={32} className="text-blue-400 mb-2 animate-pulse" />
+               <Eye size={32} className="text-purple-400 mb-2 animate-pulse" />
                <p className="text-lg text-white font-bold">{t('drawingDojoInstruct')}</p>
                <p className="text-sm text-slate-500">Stare at the center. Absorb the whole shape.</p>
              </div>
@@ -149,13 +184,19 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
           </div>
         )}
 
-        {/* Phase 2: Draw */}
+        {/* Phase 2: Draw (Practice & Challenge) */}
         {step === 'draw' && (
            <div className="w-full flex flex-col items-center animate-in fade-in duration-300">
-              <h3 className="text-xl text-white font-bold mb-4">{t('drawingDojoDraw')}</h3>
+              <div className="text-center mb-4">
+                  <h3 className="text-xl text-white font-bold">{mode === 'practice' ? 'Trace the Shape' : t('drawingDojoDraw')}</h3>
+                  {mode === 'practice' && <p className="text-sm text-slate-400">Build muscle memory by tracing firmly over the faint line.</p>}
+              </div>
               
               <div className="w-full max-w-[500px] mx-auto">
-                 <SketchPad onExport={handleExportSketch} />
+                 <SketchPad 
+                    onExport={handleExportSketch} 
+                    traceImage={mode === 'practice' ? currentGestalt.path : null}
+                 />
               </div>
 
               <button 
