@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, subscribeToHistory, saveSessionToCloud, updateSessionRemarks, updateIntuitionStats, subscribeToIntuitionStats, deleteSession, updateSessionData, logOut } from './services/firebase';
@@ -485,7 +484,10 @@ const App: React.FC = () => {
                             {/* Centered Square Container for SketchPad */}
                             <div className="flex-grow flex items-center justify-center">
                                 <div className="w-full max-w-[550px]">
-                                    <SketchPad onExport={updateSketch} />
+                                    <SketchPad 
+                                      onExport={updateSketch} 
+                                      guidanceTags={currentSession?.userNotes ? currentSession.userNotes.split(',').map(s => s.trim()).filter(s => s.length > 0) : []}
+                                    />
                                 </div>
                             </div>
                             <div className="flex justify-between mt-6">

@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2 } from 'lucide-react';
+import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2, Tag } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SketchPadProps {
   onExport: (base64: string) => void;
   disabled?: boolean;
+  guidanceTags?: string[];
 }
 
-const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => {
+const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guidanceTags = [] }) => {
   const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -109,7 +110,7 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
 
   return (
     <div className={`flex flex-col gap-2 transition-all duration-300 ${isExpanded ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'w-full'}`}>
-      <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700 shadow-lg">
+      <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700 shadow-lg shrink-0">
         <div className="flex gap-2">
           <button
             onClick={() => setTool('pen')}
@@ -153,6 +154,20 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false }) => 
         </div>
       </div>
       
+      {/* Guidance Tags */}
+      {guidanceTags.length > 0 && (
+        <div className="w-full overflow-x-auto flex items-center gap-2 py-1 px-1 custom-scrollbar shrink-0 min-h-[40px]">
+           <div className="flex items-center gap-1 text-slate-500 mr-1 shrink-0">
+             <Tag size={12} />
+           </div>
+           {guidanceTags.map((tag, i) => (
+             <span key={i} className="flex-shrink-0 px-2.5 py-1 bg-blue-900/40 text-blue-200 border border-blue-500/30 rounded-md text-xs font-medium whitespace-nowrap shadow-sm select-none">
+               {tag}
+             </span>
+           ))}
+        </div>
+      )}
+
       {/* Canvas Container: Ensures 1:1 Aspect Ratio even in Expanded Mode */}
       <div className={`relative bg-slate-900 rounded-b-lg border border-slate-700 overflow-hidden touch-none mx-auto ${isExpanded ? 'flex-grow w-full flex items-center justify-center' : 'w-full aspect-square'}`}>
         <canvas
