@@ -232,7 +232,13 @@ const App: React.FC = () => {
     setLoadingMessage(currentSession.sessionType === 'TRAINING' ? t('analyzingDesc') : t('savingDesc'));
 
     try {
-      let resultSession = { ...currentSession };
+      // Calculate duration
+      const durationSeconds = Math.round((Date.now() - currentSession.timestamp) / 1000);
+
+      let resultSession = { 
+        ...currentSession,
+        durationSeconds: durationSeconds
+      };
 
       if (currentSession.sessionType === 'TRAINING') {
           // AI Analysis for Training
