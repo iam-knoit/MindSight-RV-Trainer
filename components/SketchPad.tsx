@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2, Tag, Grid3X3, Image as ImageIcon } from 'lucide-react';
+import { Eraser, Pen, Trash2, Undo, Maximize2, Minimize2, Tag, Grid3X3, Image as ImageIcon, Lightbulb, X, Loader2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SketchPadProps {
@@ -7,9 +8,11 @@ interface SketchPadProps {
   disabled?: boolean;
   guidanceTags?: string[];
   traceImage?: string | null; // Optional SVG/Image data to trace over
+  drawingTips?: string[]; // New: Coach Tips
+  isLoadingTips?: boolean;
 }
 
-const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guidanceTags = [], traceImage = null }) => {
+const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guidanceTags = [], traceImage = null, drawingTips = [], isLoadingTips = false }) => {
   const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,6 +22,9 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
   const [isExpanded, setIsExpanded] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   
+  // Tips State
+  const [showTips, setShowTips] = useState(true);
+
   // Undo History State
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyStep, setHistoryStep] = useState(-1);
@@ -155,6 +161,40 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
 
   return (
     <div className={`flex flex-col gap-2 transition-all duration-300 ${isExpanded ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'w-full'}`}>
+      
+      {/* Coach Tips Banner */}
+      {showTips && (drawingTips.length > 0 || isLoadingTips) && (
+        <div className="bg-gradient-to-r from-blue-900/40 to-slate-900 border border-blue-500/30 rounded-lg p-3 mb-1 animate-in slide-in-from-top-2 relative">
+           <button 
+             onClick={() => setShowTips(false)}
+             className="absolute top-2 right-2 text-slate-500 hover:text-white"
+           >
+             <X size={14} />
+           </button>
+           <div className="flex items-start gap-3">
+             <div className="bg-blue-900/50 p-1.5 rounded-full shrink-0 mt-0.5">
+               {isLoadingTips ? <Loader2 size={16} className="text-blue-400 animate-spin" /> : <Lightbulb size={16} className="text-yellow-400" />}
+             </div>
+             <div>
+               <h4 className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-1">{isLoadingTips ? "ANALYZING PAST SESSIONS..." : "COACH'S THINKING GUIDANCE"}</h4>
+               {isLoadingTips ? (
+                 <div className="h-2 w-24 bg-slate-700 rounded animate-pulse"></div>
+               ) : (
+                 <div className="flex flex-wrap gap-x-4 gap-y-1">
+                   {drawingTips.map((tip, i) => (
+                      <span key={i} className="text-xs text-slate-300 flex items-center gap-1.5">
+                         <span className="w-1 h-1 rounded-full bg-blue-500"></span>
+                         {tip}
+                      </span>
+                   ))}
+                 </div>
+               )}
+             </div>
+           </div>
+        </div>
+      )}
+
+      {/* Toolbar */}
       <div className="flex justify-between items-center bg-slate-800 p-2 rounded-t-lg border border-slate-700 shadow-lg shrink-0 overflow-x-auto custom-scrollbar">
         <div className="flex gap-2 items-center">
           <button
@@ -200,6 +240,16 @@ const SketchPad: React.FC<SketchPadProps> = ({ onExport, disabled = false, guida
             className="w-16 mx-2 accent-blue-500 hidden sm:block"
             title="Brush Size"
           />
+
+          {!showTips && drawingTips.length > 0 && (
+             <button
+               onClick={() => setShowTips(true)}
+               className="ml-2 p-2 rounded-md bg-yellow-900/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-900/40 transition-colors animate-pulse"
+               title="Show Tips"
+             >
+               <Lightbulb size={18} />
+             </button>
+          )}
         </div>
         <div className="flex gap-2 pl-4">
             <button

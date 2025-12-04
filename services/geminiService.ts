@@ -599,3 +599,66 @@ export const evaluateDojoSketch = async (
     return { isMatch: false, feedback: "AI busy (Rate Limit). Self-check required.", error: true };
   }
 };
+
+export const generateDrawingTips = async (history: SessionData[]): Promise<string[]> => {
+  if (!process.env.API_KEY) {
+     return ["Focus on basic shapes.", "Don't analyze, just perceive.", "Keep the pen moving."];
+  }
+
+  // Filter for training sessions with feedback
+  const relevantHistory = history
+      .filter(s => s.sessionType === 'TRAINING' && s.aiFeedback && s.drawingScore !== undefined)
+      .slice(-5); // Only look at last 5
+
+  if (relevantHistory.length === 0) {
+      return [
+          "Start with the major gestalt (outline).",
+          "Draw what you see, not what you think it is.",
+          "Pay attention to light and shadow."
+      ];
+  }
+
+  const historySummary = relevantHistory.map((s, i) => `
+      Session ${i+1}:
+      Drawing Score: ${s.drawingScore}/100
+      Feedback: "${s.aiFeedback}"
+  `).join('\n');
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const prompt = `
+      You are a Remote Viewing Drawing Coach.
+      Based on the student's recent performance history below, identify their recurring sketching mistakes (e.g., Analytic Overlay/AOL, scale issues, missing negative space, labeling objects).
+      
+      HISTORY:
+      ${historySummary}
+
+      Task: Provide 3 short, punchy, imperative tips (max 10 words each) for their NEXT sketch to help them avoid these specific past mistakes.
+      
+      Respond in JSON: { "tips": ["Tip 1", "Tip 2", "Tip 3"] }
+  `;
+
+  try {
+      const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: { parts: [{ text: prompt }] },
+          config: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                  type: Type.OBJECT,
+                  properties: {
+                      tips: { type: Type.ARRAY, items: { type: Type.STRING } }
+                  }
+              }
+          }
+      });
+      
+      if (response.text) {
+          const result = JSON.parse(response.text);
+          return result.tips || [];
+      }
+      return [];
+  } catch (e) {
+      console.warn("Failed to generate drawing tips", e);
+      return ["Relax and let the hand move.", "Capture the motion first.", "Avoid naming the object."];
+  }
+};

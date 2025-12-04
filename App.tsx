@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, subscribeToHistory, saveSessionToCloud, updateSessionRemarks, updateIntuitionStats, subscribeToIntuitionStats, deleteSession, updateSessionData, logOut } from './services/firebase';
-import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore, analyzeOpenSession, generateVisualReconstruction } from './services/geminiService';
+import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore, analyzeOpenSession, generateVisualReconstruction, generateDrawingTips } from './services/geminiService';
 import { SessionState, SessionData, CoachReport, IntuitionStats, SessionType } from './types';
 import { useLanguage } from './contexts/LanguageContext';
 import { Brain, Sparkles, Image as ImageIcon, CheckCircle, XCircle, ArrowLeft, ArrowRight, Loader2, Eye, LogIn, LogOut } from 'lucide-react';
@@ -41,6 +42,10 @@ const App: React.FC = () => {
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
   const [intuitionStats, setIntuitionStats] = useState<IntuitionStats | null>(null);
+
+  // Drawing Guidance State
+  const [drawingTips, setDrawingTips] = useState<string[]>([]);
+  const [isLoadingTips, setIsLoadingTips] = useState(false);
 
   // Modals & UI
   const [showAuth, setShowAuth] = useState(false);
@@ -104,6 +109,18 @@ const App: React.FC = () => {
        });
     }
   }, [history, sessionState]);
+
+  // Fetch Drawing Tips when entering Step 3
+  useEffect(() => {
+      if (sessionState === SessionState.VIEWING && step === 3) {
+          setIsLoadingTips(true);
+          setDrawingTips([]); // Clear old tips
+          generateDrawingTips(history)
+              .then(tips => setDrawingTips(tips))
+              .catch(err => console.error(err))
+              .finally(() => setIsLoadingTips(false));
+      }
+  }, [sessionState, step, history]);
 
   // Session Management
   const generateCoordinate = () => {
@@ -487,6 +504,8 @@ const App: React.FC = () => {
                                     <SketchPad 
                                       onExport={updateSketch} 
                                       guidanceTags={currentSession?.userNotes ? currentSession.userNotes.split(',').map(s => s.trim()).filter(s => s.length > 0) : []}
+                                      drawingTips={drawingTips}
+                                      isLoadingTips={isLoadingTips}
                                     />
                                 </div>
                             </div>
