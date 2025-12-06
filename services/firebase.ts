@@ -15,6 +15,7 @@ import {
   getFirestore, 
   doc, 
   setDoc, 
+  addDoc,
   deleteDoc, 
   updateDoc, 
   collection, 
@@ -159,6 +160,22 @@ export const subscribeToHistory = (userId: string, callback: (sessions: SessionD
     });
     callback(sessions);
   });
+};
+
+export const submitFeedback = async (userId: string, feedback: string, type: 'feature_request' | 'bug' | 'general') => {
+  try {
+    const feedbackRef = collection(db, 'feedback');
+    await addDoc(feedbackRef, {
+      userId,
+      text: feedback,
+      type,
+      timestamp: Timestamp.now(),
+      status: 'new'
+    });
+  } catch (error) {
+    console.error("Error submitting feedback", error);
+    throw error;
+  }
 };
 
 // --- Intuition Stats Functions ---

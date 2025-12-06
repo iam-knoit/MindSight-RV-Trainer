@@ -61,12 +61,16 @@ export interface OpenAnalysisResult {
   analysis: string;
 }
 
+export type AppFeatureId = 'INTUITION_DOJO' | 'DRAWING_DOJO' | 'TRAINING_MODE' | 'OPEN_MODE' | 'CHAT_COACH' | 'SUGGEST_NEW_FEATURE';
+
 export interface CoachReport {
   trendSummary: string;
   strengths: string[];
   weaknesses: string[];
   trainingTips: string[];
   immediateAction: string; 
+  recommendedFeature?: AppFeatureId;
+  featureReason?: string;
 }
 
 export interface ChatMessage {

@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock, Target, Lock, PenTool } from 'lucide-react';
+import { Brain, Play, User as UserIcon, Zap, History, BarChart3, MessageSquareText, Clock, TrendingUp, RefreshCw, Check, XCircle, Lightbulb, FileClock, Target, Lock, PenTool, ArrowRight, Compass, MessageSquarePlus } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SessionData, CoachReport } from '../../types';
+import { SessionData, CoachReport, AppFeatureId } from '../../types';
 import HistoryChart from '../HistoryChart';
 import { calculateLevel, getRankStyle } from '../../utils/leveling';
 import { User } from 'firebase/auth';
@@ -22,12 +22,13 @@ interface DashboardViewProps {
   onEnterDojo: () => void;
   onEnterDrawingDojo: () => void;
   onShowSessionLog: () => void;
+  onShowFeedback: (initialText?: string) => void;
   isHistoryLoaded: boolean;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
   user, history, coachReport, isLoading, loadingMessage, analyzingHistory,
-  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onEnterDrawingDojo, onShowSessionLog, isHistoryLoaded
+  onShowAuth, onShowModeSelection, onShowAnalytics, onShowChat, onRunCoachAnalysis, onEnterDojo, onEnterDrawingDojo, onShowSessionLog, onShowFeedback, isHistoryLoaded
 }) => {
   const { t } = useLanguage();
   
@@ -51,9 +52,56 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     return `${s}${t('sec')}`;
   };
 
+  const renderRecommendationCard = () => {
+    if (!coachReport || !coachReport.recommendedFeature) return null;
+
+    const featureMap: Record<AppFeatureId, { icon: React.FC<any>, label: string, action: () => void, color: string }> = {
+      'INTUITION_DOJO': { icon: Zap, label: t('intuitionDojo'), action: onEnterDojo, color: 'text-purple-400 bg-purple-900/20 border-purple-500/30' },
+      'DRAWING_DOJO': { icon: PenTool, label: t('drawingDojo'), action: onEnterDrawingDojo, color: 'text-cyan-400 bg-cyan-900/20 border-cyan-500/30' },
+      'TRAINING_MODE': { icon: Brain, label: t('modeTraining'), action: onShowModeSelection, color: 'text-blue-400 bg-blue-900/20 border-blue-500/30' },
+      'OPEN_MODE': { icon: Compass, label: t('modeOpen'), action: onShowModeSelection, color: 'text-green-400 bg-green-900/20 border-green-500/30' },
+      'CHAT_COACH': { icon: MessageSquareText, label: t('chatTitle'), action: onShowChat, color: 'text-amber-400 bg-amber-900/20 border-amber-500/30' },
+      'SUGGEST_NEW_FEATURE': { icon: Lightbulb, label: t('suggestFeatureTitle'), action: () => onShowFeedback(coachReport.immediateAction), color: 'text-yellow-400 bg-yellow-900/20 border-yellow-500/30' }
+    };
+
+    const rec = featureMap[coachReport.recommendedFeature];
+
+    return (
+      <div className="w-full mb-8 animate-in slide-in-from-top-4 duration-500">
+        <div className="bg-slate-900/80 rounded-2xl border border-blue-500/30 p-1 relative overflow-hidden group">
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500"></div>
+           
+           <div className="p-4 flex flex-col sm:flex-row items-center gap-4">
+              <div className="p-3 bg-blue-500/10 rounded-full shrink-0">
+                 <rec.icon className="text-blue-400" size={24} />
+              </div>
+              
+              <div className="flex-grow text-center sm:text-left">
+                 <h3 className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-1">{t('recommendedFeature')}</h3>
+                 <p className="text-white font-bold text-lg flex items-center justify-center sm:justify-start gap-2">
+                    {rec.label}
+                 </p>
+                 <p className="text-sm text-slate-400 mt-1">
+                   <span className="text-slate-500 italic mr-2">{t('whyThisFeature')}</span>
+                   {coachReport.featureReason}
+                 </p>
+              </div>
+
+              <button 
+                onClick={rec.action}
+                className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg ${rec.color}`}
+              >
+                {coachReport.recommendedFeature === 'SUGGEST_NEW_FEATURE' ? t('suggestFeature') : t('goToFeature')} <ArrowRight size={16} />
+              </button>
+           </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 w-full max-w-5xl mx-auto relative">
-      <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 mb-12">
+      <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 mb-12 w-full">
         <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 mx-auto border border-slate-700 relative group">
           <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-all"></div>
           <Brain className="text-blue-400 w-12 h-12" />
@@ -65,6 +113,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         <p className="text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
           {user ? t('introAuth') : t('introGuest')}
         </p>
+
+        {/* Recommended Feature Card */}
+        {user && isHistoryLoaded && renderRecommendationCard()}
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
             {user ? (
@@ -288,6 +339,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Footer Feedback Link */}
+      {user && (
+         <div className="mt-12 mb-4">
+             <button 
+                onClick={() => onShowFeedback('')}
+                className="text-slate-500 hover:text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-colors"
+             >
+                <MessageSquarePlus size={14} />
+                {t('feedbackTitle')}
+             </button>
+         </div>
       )}
     </div>
   );

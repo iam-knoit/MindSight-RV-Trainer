@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 // Get the version from the environment (injected by Vite)
@@ -219,10 +220,23 @@ const translations: Record<Language, Record<string, string>> = {
     "btnSignIn": "Sign In",
     "btnSignUp": "Sign Up",
     "noAccount": "Don't have an account?",
-    "haveAccount": "Already have an account?"
+    "haveAccount": "Already have an account?",
+    "recommendedFeature": "Recommended Next Step",
+    "whyThisFeature": "Why?",
+    "goToFeature": "Go Now",
+    "feedbackTitle": "Feedback & Feature Request",
+    "feedbackDesc": "Tell us how we can improve MindSight or suggest a feature you need.",
+    "feedbackPlaceholder": "I wish the app had...",
+    "submitFeedback": "Submit Feedback",
+    "feedbackThanks": "Thanks for your feedback!",
+    "feedbackError": "Failed to submit. Try again.",
+    "suggestFeature": "Request Feature",
+    "suggestFeatureTitle": "Suggest a New Feature",
+    "feedbackTypeFeature": "Feature Request",
+    "feedbackTypeBug": "Bug Report",
+    "feedbackTypeGeneral": "General Feedback"
   },
   si: {
-    // Basic fallback for Sinhala if needed (minimal)
     "appTitle": "MindSight",
     "appSubtitle": `RV පුහුණු ප්‍රොටෝකෝලය v${appVersion}`,
     "rankPromoted": "නිලය උසස් කරන ලදි",

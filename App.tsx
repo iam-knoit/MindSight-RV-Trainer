@@ -23,6 +23,7 @@ import RankToast from './components/modals/RankToast';
 import SessionLogModal from './components/modals/SessionLogModal';
 import ModeSelectionModal from './components/modals/ModeSelectionModal';
 import ConfirmationModal from './components/modals/ConfirmationModal';
+import FeedbackModal from './components/modals/FeedbackModal';
 
 import { calculateLevel, getRankStyle } from './utils/leveling';
 
@@ -54,6 +55,8 @@ const App: React.FC = () => {
   const [showLog, setShowLog] = useState(false);
   const [showModeSelect, setShowModeSelect] = useState(false);
   const [showConfirmExit, setShowConfirmExit] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackInitialText, setFeedbackInitialText] = useState('');
   
   const [rankToast, setRankToast] = useState<{level: number, title: string, division: string | null} | null>(null);
   const [showCalibrationToast, setShowCalibrationToast] = useState(false);
@@ -382,6 +385,14 @@ const App: React.FC = () => {
         />
         <ConfirmationModal isOpen={showConfirmExit} title={t('exitSession')} message={t('confirmExit')} onConfirm={confirmExit} onCancel={() => setShowConfirmExit(false)} />
         
+        <FeedbackModal 
+           isOpen={showFeedback} 
+           onClose={() => setShowFeedback(false)} 
+           user={user} 
+           initialText={feedbackInitialText} 
+           initialType="feature_request" 
+        />
+
         {rankToast && <RankToast {...rankToast} onClose={() => setRankToast(null)} isCalibrationComplete={false} />}
         {showCalibrationToast && <RankToast level={0} title="calibrationComplete" division={null} onClose={() => setShowCalibrationToast(false)} isCalibrationComplete={true} />}
 
@@ -462,6 +473,10 @@ const App: React.FC = () => {
                 onEnterDojo={handleEnterDojo}
                 onEnterDrawingDojo={handleEnterDrawingDojo}
                 onShowSessionLog={() => setShowLog(true)}
+                onShowFeedback={(text) => {
+                    setFeedbackInitialText(text || '');
+                    setShowFeedback(true);
+                }}
                 isHistoryLoaded={isHistoryLoaded}
             />
         )}

@@ -421,7 +421,7 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
   // Format history into a readable summary for the AI
   const historyText = recentHistory.map((s, i) => `
     Session ${i + 1}:
-    - Score: ${s.aiScore}/100
+    - Score: ${s.aiScore}/100 (Drawing: ${s.drawingScore || 'N/A'}, Notes: ${s.notesScore || 'N/A'})
     - AI Feedback: "${s.aiFeedback}"
     - Duration: ${s.durationSeconds ? s.durationSeconds + 's' : 'Unknown'}
   `).join('\n');
@@ -438,14 +438,24 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
     
     ${langInstruction}
 
-    Based on their recent performance (especially the last 3 sessions), determine the SINGLE MOST IMPORTANT thing they should do RIGHT NOW to improve.
+    Based on their recent performance, recommend the SINGLE BEST App Feature they should use right now to improve.
     
+    App Feature Options:
+    1. 'INTUITION_DOJO' -> If general scores are low (<40%) or guessing is random.
+    2. 'DRAWING_DOJO' -> If Drawing Scores are consistently lower than Notes Scores.
+    3. 'OPEN_MODE' -> If accuracy is high (>80%) and they need a challenge (future prediction/missing objects).
+    4. 'TRAINING_MODE' -> If they are inconsistent or average.
+    5. 'CHAT_COACH' -> If they seem confused about protocols.
+    6. 'SUGGEST_NEW_FEATURE' -> If the user needs a tool we don't have yet (e.g. Meditation Timer, AR Target, Group Practice).
+
     Provide a JSON report with:
     1. trendSummary: A 1-sentence overview of their progress.
     2. strengths: A list of 2-3 things they are doing well.
     3. weaknesses: A list of 2-3 things they need to improve.
     4. trainingTips: A list of 2-3 specific actionable exercises.
-    5. immediateAction: A single, highly specific task the student should do right now (e.g., "Do a 5-minute breathing exercise," "Practice Texture words in the Sensory Helper," or "Go to the Intuition Dojo").
+    5. immediateAction: A single, highly specific task (e.g. "Draw 5 circles in the Drawing Dojo").
+    6. recommendedFeature: One of the App Feature IDs listed above.
+    7. featureReason: A 5-word explanation why this feature helps.
   `;
 
   try {
@@ -462,9 +472,11 @@ export const generateCoachReport = async (history: SessionData[], language: 'en'
             strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
             weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
             trainingTips: { type: Type.ARRAY, items: { type: Type.STRING } },
-            immediateAction: { type: Type.STRING } // Changed from futureSteps array to single string
+            immediateAction: { type: Type.STRING },
+            recommendedFeature: { type: Type.STRING, enum: ['INTUITION_DOJO', 'DRAWING_DOJO', 'TRAINING_MODE', 'OPEN_MODE', 'CHAT_COACH', 'SUGGEST_NEW_FEATURE'] },
+            featureReason: { type: Type.STRING }
           },
-          required: ["trendSummary", "strengths", "weaknesses", "trainingTips", "immediateAction"]
+          required: ["trendSummary", "strengths", "weaknesses", "trainingTips", "immediateAction", "recommendedFeature", "featureReason"]
         }
       }
     });
