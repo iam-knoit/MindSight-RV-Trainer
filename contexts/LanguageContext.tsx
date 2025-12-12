@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 // Get the version from the environment (injected by Vite)
-const appVersion = process.env.APP_VERSION || '2.7.8';
+const appVersion = process.env.APP_VERSION || '2.8.0';
 
 type Language = 'en' | 'si';
 
@@ -234,7 +234,9 @@ const translations: Record<Language, Record<string, string>> = {
     "suggestFeatureTitle": "Suggest a New Feature",
     "feedbackTypeFeature": "Feature Request",
     "feedbackTypeBug": "Bug Report",
-    "feedbackTypeGeneral": "General Feedback"
+    "feedbackTypeGeneral": "General Feedback",
+    "zenMode": "Zen Mode",
+    "zenModeActive": "ZEN MODE ACTIVE"
   },
   si: {
     "appTitle": "MindSight",

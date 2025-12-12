@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { X, Brain, Compass, Play, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -20,7 +21,7 @@ const ModeSelectionModal: React.FC<ModeSelectionModalProps> = ({ isOpen, onClose
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
        <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative animate-in slide-in-from-bottom-8 duration-300">
-          <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10 transition-transform active:scale-90">
             <X size={24} />
           </button>
 
@@ -33,7 +34,7 @@ const ModeSelectionModal: React.FC<ModeSelectionModalProps> = ({ isOpen, onClose
              {/* Standard Training Card */}
              <button
                onClick={() => setSelectedMode('TRAINING')}
-               className={`relative p-6 rounded-2xl border-2 transition-all duration-200 text-left flex flex-col gap-4 group
+               className={`relative p-6 rounded-2xl border-2 transition-all duration-200 text-left flex flex-col gap-4 group active:scale-[0.98]
                  ${selectedMode === 'TRAINING' ? 'bg-blue-900/20 border-blue-500 ring-1 ring-blue-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-500'}
                `}
              >
@@ -50,7 +51,7 @@ const ModeSelectionModal: React.FC<ModeSelectionModalProps> = ({ isOpen, onClose
              {/* Open Exploration Card */}
              <button
                onClick={() => setSelectedMode('OPEN')}
-               className={`relative p-6 rounded-2xl border-2 transition-all duration-200 text-left flex flex-col gap-4 group
+               className={`relative p-6 rounded-2xl border-2 transition-all duration-200 text-left flex flex-col gap-4 group active:scale-[0.98]
                  ${selectedMode === 'OPEN' ? 'bg-purple-900/20 border-purple-500 ring-1 ring-purple-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-500'}
                `}
              >
@@ -84,7 +85,7 @@ const ModeSelectionModal: React.FC<ModeSelectionModalProps> = ({ isOpen, onClose
              <button
                onClick={() => selectedMode === 'TRAINING' ? onSelectTraining() : onSelectOpen(intent)}
                disabled={selectedMode === 'OPEN' && !intent.trim()}
-               className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all
+               className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95
                  ${selectedMode === 'TRAINING' 
                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20' 
                    : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed'}

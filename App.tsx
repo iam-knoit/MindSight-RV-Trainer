@@ -115,15 +115,15 @@ const App: React.FC = () => {
 
   // Fetch Drawing Tips when entering Step 3
   useEffect(() => {
-      if (sessionState === SessionState.VIEWING && step === 3) {
+      // Only fetch if we are in viewing mode, step 3, have no tips yet, and aren't currently loading
+      if (sessionState === SessionState.VIEWING && step === 3 && drawingTips.length === 0 && !isLoadingTips) {
           setIsLoadingTips(true);
-          setDrawingTips([]); // Clear old tips
           generateDrawingTips(history)
               .then(tips => setDrawingTips(tips))
               .catch(err => console.error(err))
               .finally(() => setIsLoadingTips(false));
       }
-  }, [sessionState, step, history]);
+  }, [sessionState, step, history, drawingTips.length, isLoadingTips]);
 
   // Session Management
   const generateCoordinate = () => {
@@ -135,6 +135,7 @@ const App: React.FC = () => {
   const startSession = async (type: SessionType, intent?: string) => {
     setShowModeSelect(false);
     setStep(1);
+    setDrawingTips([]); // Clear tips from previous session
     
     const newSession: SessionData = {
       id: Date.now().toString(),
@@ -437,7 +438,7 @@ const App: React.FC = () => {
                 {user ? (
                   <button 
                     onClick={logOut} 
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all active:scale-95"
                     title={t('logout')}
                   >
                     <LogOut size={20} />
@@ -445,7 +446,7 @@ const App: React.FC = () => {
                 ) : (
                   <button 
                     onClick={() => setShowAuth(true)} 
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-all active:scale-95"
                   >
                     <LogIn size={16} /> <span className="hidden sm:inline">{t('login')}</span>
                   </button>
@@ -504,7 +505,7 @@ const App: React.FC = () => {
                     </div>
                     <button 
                     onClick={goHome} 
-                    className="text-slate-400 hover:text-red-400 hover:bg-red-900/10 p-2 rounded-lg transition-colors"
+                    className="text-slate-400 hover:text-red-400 hover:bg-red-900/10 p-2 rounded-lg transition-all active:scale-90"
                     >
                         <XCircle size={20} />
                     </button>
@@ -531,10 +532,10 @@ const App: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex justify-between mt-6">
-                                <button onClick={handleStepBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
+                                <button onClick={handleStepBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2 transition-all active:scale-95">
                                     <ArrowLeft size={18} /> {t('btnBack')}
                                 </button>
-                                <button onClick={handleStepNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
+                                <button onClick={handleStepNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-blue-900/20">
                                     {t('sketchReviewBtn')} <ArrowRight size={18} />
                                 </button>
                             </div>
@@ -556,7 +557,7 @@ const App: React.FC = () => {
         {sessionState === SessionState.FEEDBACK && currentSession && (
             <div className="flex flex-col h-screen">
                  <div className="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center shadow-lg z-20">
-                    <button onClick={goHome} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+                    <button onClick={goHome} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all active:scale-95">
                         <ArrowLeft size={20} /> <span className="font-bold">{t('exitSession')}</span>
                     </button>
                     <div className="font-mono text-slate-500 font-bold">{currentSession.coordinate}</div>

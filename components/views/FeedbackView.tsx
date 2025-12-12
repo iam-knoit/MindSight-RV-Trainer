@@ -82,14 +82,14 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
            {isLowScore ? (
              <button
                onClick={onCalibrationRequired}
-               className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors font-bold animate-pulse shadow-lg shadow-red-900/40 border border-red-500"
+               className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all active:scale-95 font-bold animate-pulse shadow-lg shadow-red-900/40 border border-red-500"
              >
                {t('calibrationRequired')}
              </button>
            ) : (
              <button
                onClick={onNextSession}
-               className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+               className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all active:scale-95"
              >
                {t('nextSession')}
              </button>
@@ -119,13 +119,13 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
           <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
               <button 
                   onClick={() => setViewMode('split')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'split' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all active:scale-90 ${viewMode === 'split' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
               >
                   {t('modeSplit')}
               </button>
               <button 
                   onClick={() => setViewMode('overlay')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'overlay' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all active:scale-90 ${viewMode === 'overlay' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
               >
                   {t('modeOverlay')}
               </button>
@@ -146,7 +146,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
                   </div>
                   <button 
                   onClick={() => setInvertSketch(!invertSketch)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${invertSketch ? 'bg-blue-900/30 border-blue-500/50 text-blue-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all active:scale-90 ${invertSketch ? 'bg-blue-900/30 border-blue-500/50 text-blue-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
                   >
                   <Contrast size={14} /> {t('invertSketch')}
                   </button>
@@ -209,7 +209,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
                             <button
                                 onClick={() => onOpenAnalysis(currentSession)}
                                 disabled={isOpenAnalyzing}
-                                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl font-bold transition-all border border-slate-700 hover:border-blue-500/50 flex items-center gap-2 mx-auto disabled:opacity-50"
+                                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl font-bold transition-all active:scale-95 border border-slate-700 hover:border-blue-500/50 flex items-center gap-2 mx-auto disabled:opacity-50"
                             >
                                 {isOpenAnalyzing ? <RefreshCw className="animate-spin" size={18} /> : <Wand2 size={18} />}
                                 {isOpenAnalyzing ? t('analyzingOpen') : t('btnAnalyzeOpen')}
@@ -242,7 +242,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
                                 <button
                                     onClick={handleGenerateImage}
                                     disabled={isGeneratingImage}
-                                    className="w-full mt-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                    className="w-full mt-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                                 >
                                     {isGeneratingImage ? <Loader2 className="animate-spin" size={14} /> : <ImagePlus size={14} />}
                                     {isGeneratingImage ? t('generatingImage') : t('generateImage')}
@@ -315,7 +315,7 @@ const FeedbackView: React.FC<FeedbackViewProps> = ({
                   <button 
                       onClick={() => onSaveRemarks(remarksInput)}
                       disabled={isSavingRemarks || !remarksInput.trim()}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${remarksSaved 
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all active:scale-95 ${remarksSaved 
                           ? 'bg-green-900/30 text-green-400 border border-green-500/50' 
                           : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
                   >

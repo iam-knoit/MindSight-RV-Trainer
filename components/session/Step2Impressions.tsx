@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BookOpen, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -70,10 +71,10 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
             />
           </div>
           <div className="flex justify-between">
-            <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
+            <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2 transition-all active:scale-95">
               <ArrowLeft size={18} /> {t('btnBack')}
             </button>
-            <button onClick={onNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20">
+            <button onClick={onNext} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-blue-900/20">
               {t('btnNextVisuals')} <ArrowRight size={18} />
             </button>
           </div>
@@ -84,7 +85,7 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
           {!showHelper ? (
              <button 
                onClick={() => setShowHelper(true)}
-               className="w-full h-full min-h-[100px] rounded-2xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-900/10 transition-all group"
+               className="w-full h-full min-h-[100px] rounded-2xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-900/10 transition-all group active:scale-95"
              >
                <BookOpen size={32} className="mb-2 group-hover:scale-110 transition-transform" />
                <span className="font-semibold">{t('helperBtn')}</span>
@@ -95,7 +96,7 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
                  <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                     <BookOpen size={14} className="text-blue-400"/> {t('helperBtn')}
                  </h3>
-                 <button onClick={() => setShowHelper(false)} className="text-slate-500 hover:text-white">
+                 <button onClick={() => setShowHelper(false)} className="text-slate-500 hover:text-white transition-all active:scale-90">
                    <X size={16} />
                  </button>
               </div>
@@ -108,7 +109,7 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${activeCategory === cat ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all active:scale-95 ${activeCategory === cat ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
                   >
                     {cat}
                   </button>
@@ -122,7 +123,7 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
                       <button
                         key={word}
                         onClick={() => addWord(word)}
-                        className="text-left px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-blue-300 text-xs transition-colors border border-slate-700/50"
+                        className="text-left px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-blue-300 text-xs transition-all active:scale-95 border border-slate-700/50"
                       >
                         {word}
                       </button>

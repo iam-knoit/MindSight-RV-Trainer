@@ -46,12 +46,12 @@ const Step4Review: React.FC<Step4Props> = ({ notes, sketch, onSubmit, onBack, se
       </div>
 
       <div className="flex justify-between pt-8">
-        <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2">
+        <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2 transition-all active:scale-95">
           <ArrowLeft size={18} /> {t('editData')}
         </button>
         <button 
           onClick={onSubmit} 
-          className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-[0_0_30px_-5px_rgba(22,163,74,0.4)]"
+          className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center gap-2 shadow-[0_0_30px_-5px_rgba(22,163,74,0.4)]"
         >
           {sessionType === 'TRAINING' ? <ShieldCheck size={20} /> : <Save size={20} />}
           {sessionType === 'TRAINING' ? t('submitAnalysis') : t('saveLog')}

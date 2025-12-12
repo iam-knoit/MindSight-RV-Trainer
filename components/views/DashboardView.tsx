@@ -89,7 +89,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
               <button 
                 onClick={rec.action}
-                className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg ${rec.color}`}
+                className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg ${rec.color}`}
               >
                 {coachReport.recommendedFeature === 'SUGGEST_NEW_FEATURE' ? t('suggestFeature') : t('goToFeature')} <ArrowRight size={16} />
               </button>
@@ -123,7 +123,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 type="button"
                 onClick={onShowModeSelection}
                 disabled={isLoading}
-                className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all active:scale-95 shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.6)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoading ? (
                 <RefreshCw className="animate-spin" />
@@ -136,7 +136,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             <button
                 type="button"
                 onClick={onShowAuth}
-                className="px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all flex items-center justify-center gap-3"
+                className="px-8 py-4 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-3"
             >
                 <UserIcon size={20} />
                 {t('signInRegister')}
@@ -148,7 +148,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 <>
                   <button
                       onClick={onEnterDojo}
-                      className="px-6 py-4 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-200 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3"
+                      className="px-6 py-4 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-200 hover:text-white font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-3"
                   >
                       <Zap size={20} />
                       {t('intuitionDojo')}
@@ -156,7 +156,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   
                   <button
                       onClick={onEnterDrawingDojo}
-                      className="px-6 py-4 bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 text-cyan-200 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3"
+                      className="px-6 py-4 bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 text-cyan-200 hover:text-white font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-3"
                   >
                       <PenTool size={20} />
                       {t('drawingDojo')}
@@ -183,7 +183,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex gap-2 flex-wrap">
                  <button 
                     onClick={onShowSessionLog}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 transition-all flex items-center gap-2"
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 transition-all active:scale-95 flex items-center gap-2"
                  >
                     <FileClock size={12} />
                     {t('sessionLog')}
@@ -191,7 +191,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                  <button 
                     onClick={isUnlocked ? onShowAnalytics : undefined}
                     disabled={!isUnlocked}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-2
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all active:scale-95 flex items-center gap-2
                         ${isUnlocked 
                             ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' 
                             : 'bg-slate-800/50 text-slate-600 border-slate-800 cursor-not-allowed'}
@@ -205,7 +205,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                  <button 
                    onClick={isUnlocked ? onShowChat : undefined}
                    disabled={!isUnlocked}
-                   className={`text-xs px-3 py-1.5 rounded-full transition-all flex items-center gap-2
+                   className={`text-xs px-3 py-1.5 rounded-full transition-all active:scale-95 flex items-center gap-2
                       ${isUnlocked
                           ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20'
                           : 'bg-slate-800 text-slate-600 cursor-not-allowed'}
@@ -291,7 +291,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     <button 
                         onClick={onRunCoachAnalysis} 
                         disabled={analyzingHistory}
-                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-all active:scale-95"
                         title={t('regenerateReport')}
                     >
                         <RefreshCw size={12} className={analyzingHistory ? "animate-spin" : ""} />
@@ -329,7 +329,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         <button 
                         onClick={onRunCoachAnalysis}
                         disabled={analyzingHistory} 
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors"
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-all active:scale-95"
                         >
                         {analyzingHistory ? t('analyzing') : t('generateReport')}
                         </button>
@@ -346,7 +346,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
          <div className="mt-12 mb-4">
              <button 
                 onClick={() => onShowFeedback('')}
-                className="text-slate-500 hover:text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-colors"
+                className="text-slate-500 hover:text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all active:scale-95"
              >
                 <MessageSquarePlus size={14} />
                 {t('feedbackTitle')}

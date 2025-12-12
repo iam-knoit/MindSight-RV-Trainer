@@ -225,7 +225,7 @@ const IntuitionDojo: React.FC<IntuitionDojoProps> = ({ onClose, initialStats, lo
       <button 
         onClick={handleExit}
         disabled={lockedMode && !unlocked}
-        className={`mt-12 flex items-center gap-2 transition-colors ${lockedMode && !unlocked ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-white'}`}
+        className={`mt-12 flex items-center gap-2 transition-all active:scale-95 ${lockedMode && !unlocked ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-white'}`}
       >
         {lockedMode && !unlocked ? <Lock size={16} /> : <RotateCcw size={16} />}
         {t('exitDojo')}

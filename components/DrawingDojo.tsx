@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RotateCcw, Lock, CheckCircle2, Eye, Timer, ThumbsUp, ThumbsDown, AlertCircle, PenTool, BrainCircuit } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -128,7 +129,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
             <div className="bg-slate-800 p-1 rounded-xl flex border border-slate-700">
                 <button
                     onClick={() => setMode('practice')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${mode === 'practice' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${mode === 'practice' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                 >
                     <PenTool size={16} /> Practice
                 </button>
@@ -141,7 +142,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
                          setMode('challenge');
                          setStreak(0);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${mode === 'challenge' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${mode === 'challenge' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                 >
                     <BrainCircuit size={16} /> Challenge
                 </button>
@@ -201,7 +202,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
 
               <button 
                 onClick={handleCheck}
-                className="mt-6 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold shadow-lg transition-all"
+                className="mt-6 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold shadow-lg transition-all active:scale-95"
               >
                 Reveal & Check
               </button>
@@ -243,13 +244,13 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
                  <div className="flex gap-4">
                      <button 
                         onClick={() => handleManualResult('miss')}
-                        className="px-6 py-3 bg-red-900/40 hover:bg-red-800 border border-red-500/50 text-red-200 rounded-xl font-bold transition-all flex items-center gap-2"
+                        className="px-6 py-3 bg-red-900/40 hover:bg-red-800 border border-red-500/50 text-red-200 rounded-xl font-bold transition-all active:scale-95 flex items-center gap-2"
                      >
                         <ThumbsDown size={18} /> Miss
                      </button>
                      <button 
                         onClick={() => handleManualResult('match')}
-                        className="px-6 py-3 bg-green-900/40 hover:bg-green-800 border border-green-500/50 text-green-200 rounded-xl font-bold transition-all flex items-center gap-2"
+                        className="px-6 py-3 bg-green-900/40 hover:bg-green-800 border border-green-500/50 text-green-200 rounded-xl font-bold transition-all active:scale-95 flex items-center gap-2"
                      >
                         <ThumbsUp size={18} /> Match
                      </button>
@@ -257,7 +258,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
              ) : (
                 <button 
                     onClick={handleContinue}
-                    className={`px-8 py-3 rounded-xl font-bold shadow-lg transition-all ${isMatch ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                    className={`px-8 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95 ${isMatch ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                 >
                     {isMatch ? "Next Shape" : "Try Again"}
                 </button>
@@ -270,7 +271,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
       <button 
         onClick={onClose}
         disabled={lockedMode && !unlocked}
-        className={`mt-8 flex items-center gap-2 transition-colors ${lockedMode && !unlocked ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-white'}`}
+        className={`mt-8 flex items-center gap-2 transition-all active:scale-95 ${lockedMode && !unlocked ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-white'}`}
       >
         {lockedMode && !unlocked ? <Lock size={16} /> : <RotateCcw size={16} />}
         {t('exitDojo')}

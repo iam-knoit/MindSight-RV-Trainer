@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Wind, Volume2, VolumeX, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -147,7 +148,7 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
           <div className="flex items-center gap-4">
             <button
                 onClick={() => setAudioEnabled(!audioEnabled)}
-                className={`p-3 rounded-full border transition-all ${audioEnabled ? 'bg-blue-900/30 border-blue-500/50 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
+                className={`p-3 rounded-full border transition-all active:scale-95 ${audioEnabled ? 'bg-blue-900/30 border-blue-500/50 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
                 title={audioEnabled ? t('audioMute') : t('audioFocus')}
             >
                 {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
@@ -160,13 +161,13 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
           <div className="flex flex-col md:flex-row gap-4">
             <button 
               onClick={handleStartFocus} 
-              className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-semibold transition-all flex items-center justify-center gap-2 border border-slate-600 group"
+              className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 border border-slate-600 group"
             >
               <Wind size={18} className="group-hover:animate-pulse" /> {t('startFocusSeq')}
             </button>
             <button 
               onClick={onNext} 
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-semibold transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(37,99,235,0.5)]"
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(37,99,235,0.5)]"
             >
               {t('btnFocused')} <ArrowRight size={18} />
             </button>
@@ -214,7 +215,7 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
 
           <button 
             onClick={handleStopFocus}
-            className="absolute bottom-10 px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all border border-slate-600 hover:border-blue-500 z-20"
+            className="absolute bottom-10 px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all active:scale-95 border border-slate-600 hover:border-blue-500 z-20"
           >
             {t('stopFocusSeq')}
           </button>

@@ -50,7 +50,7 @@ export const analyzeSession = async (
       data: cleanBase64(targetImageBase64),
     },
   });
-  parts.push({ text: "This is the TARGET IMAGE (Ground Truth)." });
+  parts.push({ text: "IMAGE A: THE TARGET (GROUND TRUTH)" });
 
   // Add User Sketch if available
   if (userSketchBase64) {
@@ -60,14 +60,14 @@ export const analyzeSession = async (
         data: cleanBase64(userSketchBase64),
       },
     });
-    parts.push({ text: "This is the VIEWER'S SKETCH." });
+    parts.push({ text: "IMAGE B: VIEWER'S SKETCH (RAW DATA)" });
   } else {
     parts.push({ text: "The viewer did not provide a sketch." });
   }
 
   // Add User Notes
   parts.push({ 
-    text: `These are the VIEWER'S NOTES describing their impressions: "${userNotes}"`
+    text: `VIEWER'S SENSORY NOTES: "${userNotes}"`
   });
 
   const langInstruction = "Respond in English.";
@@ -75,24 +75,33 @@ export const analyzeSession = async (
   // Add Instructions
   parts.push({
     text: `
-      You are an expert Remote Viewing judge. 
-      Your task is to objectively compare the VIEWER'S SKETCH and VIEWER'S NOTES against the TARGET IMAGE.
+      You are an expert Remote Viewing Monitor and Analyst (CRV Protocol). 
       
-      Look for correlations in:
-      1. Basic Shapes (Gestalts)
-      2. Colors and Lighting
-      3. Textures and Patterns
-      4. High-level concepts (e.g., "structure", "nature", "water", "motion")
+      YOUR TASK:
+      Compare the VIEWER'S SKETCH (Image B) and NOTES against the TARGET (Image A).
       
-      Ignore lack of artistic skill in the sketch. Focus on data congruence.
+      CRITICAL INSTRUCTION FOR SKETCH ANALYSIS:
+      The Viewer is NOT an artist. Do not look for a literal drawing of an object. 
+      Instead, interpret the sketch as an IDEOGRAM or GESTALT.
+      
+      Look for TOPOLOGICAL and ENERGETIC matches:
+      1. **Motion/Energy:** If the target has flowing water, and the sketch has wavy lines, that is a HIT.
+      2. **Geometry:** If the target is a building, and the sketch has a square or a grid, that is a HIT.
+      3. **Placement:** Look for relationships (e.g., "A mass in the center," "A line across the bottom").
+      4. **Abstraction:** A single vertical line might represent a person, a tower, or a tree. Give credit for the verticality.
+      
+      Do not penalize for:
+      - Bad perspective.
+      - Messy lines.
+      - Abstract representation.
       
       ${langInstruction}
 
       Provide a JSON response with:
-      - score: An integer from 0 to 100 representing OVERALL accuracy.
-      - drawingScore: An integer from 0 to 100 representing the accuracy of the SKETCH specifically.
-      - notesScore: An integer from 0 to 100 representing the accuracy of the WRITTEN NOTES specifically.
-      - feedback: A detailed analysis (at least 3-5 sentences) of what they got right and what they missed. Expand on observed strengths and weaknesses in their sketch and notes compared to the target. Be professional and encouraging.
+      - score: Integer (0-100). Be generous if the *gestalt* (basic shape/feeling) is correct, even if the object is unrecognizable.
+      - drawingScore: Integer (0-100). How well did the lines/shapes match the target's structure?
+      - notesScore: Integer (0-100). How accurate were the descriptors?
+      - feedback: Detailed analysis. explicitly state: "The sketch contained [Shape X] which matches the [Feature Y] in the target." Point out abstract matches.
     `
   });
 
@@ -162,29 +171,27 @@ export const recalculateScore = async (
 
   parts.push({
     text: `
-      CONTEXT: You previously scored this Remote Viewing session.
+      CONTEXT: You are reviewing a score. The user believes their abstract sketch was misinterpreted.
+      
       Original Score: ${session.aiScore}
       Original Feedback: "${session.aiFeedback}"
-      User Original Notes: "${session.userNotes}"
-
-      NEW INFORMATION - USER REMARKS:
-      "${remarks}"
+      User Notes: "${session.userNotes}"
+      
+      USER REMARKS (DEFENSE): "${remarks}"
 
       TASK:
-      Review the session in light of the user's new remarks. 
-      Determine if the user has pointed out a valid connection, clarified a misinterpreted gestalt, or highlighted a technical detail that justifies a score adjustment.
+      Re-evaluate the sketch based on the user's explanation.
+      Did the user draw a valid "Ideogram" or "Gestalt" that matches the target structure, which you originally missed?
       
-      - Be fair but rigorous. Do not raise the score just because they asked. 
-      - Only raise the score if the remarks prove that the viewer actually perceived correct data that was overlooked or misunderstood in the first analysis.
-      - If the remarks are irrelevant or incorrect, keep the score roughly the same.
+      Example: If the user says "The zigzag line represents the energy of the lightning," and there is lightning in the target, ACCEPT IT as a valid data point, even if it doesn't look like a drawing of lightning.
 
       ${langInstruction}
 
       Return JSON:
-      - score: The updated overall integer score (0-100).
+      - score: Updated overall integer score (0-100).
       - drawingScore: Updated sketch score.
       - notesScore: Updated notes score.
-      - feedback: Updated feedback incorporating the review of their remarks. Mention whether the score changed and why.
+      - feedback: Explain if you see the connection now. E.g., "Upon review, I accept that the triangle shape correlates to the mountain peak."
     `
   });
 
@@ -237,7 +244,7 @@ export const analyzeOpenSession = async (
         data: cleanBase64(userSketchBase64),
       },
     });
-    parts.push({ text: "VIEWER'S SKETCH" });
+    parts.push({ text: "VIEWER'S SKETCH (ABSTRACT)" });
   }
 
   parts.push({ 
@@ -247,27 +254,25 @@ export const analyzeOpenSession = async (
   const langInstruction = "Respond in English.";
   
   const intentContext = targetIntent 
-    ? `IMPORTANT CONTEXT: The viewer was attempting to view: "${targetIntent}". Use this intent to interpret the ambiguous lines and shapes in the sketch.` 
-    : `The target is UNKNOWN. You must deduce the subject purely from the visual shapes and sensory words.`;
+    ? `INTENT: The viewer was looking for: "${targetIntent}".` 
+    : `INTENT: Unknown/Blind.`;
 
   parts.push({
     text: `
-      You are a Remote Viewing Analyst known as "The Monitor".
-      The viewer has completed a blind session.
+      You are a Remote Viewing Monitor.
+      Analyze the sketch NOT as art, but as a collection of SENSORY DATA POINTS.
       
       ${intentContext}
       
-      Your task:
-      Analyze the sketch and the notes provided.
-      1. Synthesize the visual forms from the sketch.
-      2. Synthesize the sensory adjectives from the notes.
-      3. ${targetIntent ? 'Explain how the sketch matches (or fails to match) the intended target.' : 'Make an educated PREDICTION of what the subject matter is.'}
+      1. Identify the 'Gestalts' in the sketch (e.g., "A rising curve suggests height/structure", "A wavy horizontal line suggests liquid/motion").
+      2. Combine these shapes with the notes ("${userNotes}").
+      3. ${targetIntent ? 'Explain how these shapes abstractly represent the Intent.' : 'Deduce the likely subject based on the geometry and adjectives.'}
       
       ${langInstruction}
       
       Respond in JSON:
-      - subject: A short title (3-5 words) of what is depicted.
-      - analysis: A paragraph explaining your interpretation. If intent was provided, highlight which parts of the sketch correspond to that intent.
+      - subject: A short title (3-5 words) of what the data describes.
+      - analysis: Explain the shapes. E.g., "The crossed lines suggest a man-made structure, while the circular motion implies a rotating mechanism."
     `
   });
 

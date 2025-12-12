@@ -53,7 +53,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <button 
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
+          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-transform active:scale-90"
         >
           <X size={20} />
         </button>
@@ -116,7 +116,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all shadow-lg shadow-blue-900/20 mt-4 disabled:opacity-50"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20 mt-4 disabled:opacity-50"
           >
             {loading ? (
               <RefreshCw className="animate-spin mx-auto" size={20}/>
