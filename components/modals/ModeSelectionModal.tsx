@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Brain, Compass, Play, CheckCircle2 } from 'lucide-react';
+import { X, Brain, Compass, Play, CheckCircle2, Target } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SessionType } from '../../types';
 
@@ -70,15 +70,23 @@ const ModeSelectionModal: React.FC<ModeSelectionModalProps> = ({ isOpen, onClose
           <div className="px-8 pb-8 pt-0">
              {selectedMode === 'OPEN' && (
                <div className="mb-6 animate-in slide-in-from-top-4">
-                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">{t('enterIntent')}</label>
-                 <input 
-                   type="text"
-                   value={intent}
-                   onChange={(e) => setIntent(e.target.value)}
-                   placeholder={t('intentPlaceholder')}
-                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-                 />
-                 <p className="text-xs text-slate-500 mt-2">{t('intentDesc')}</p>
+                 <label className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Target size={14} /> {t('enterIntent')}
+                 </label>
+                 <div className="relative">
+                    <input 
+                      type="text"
+                      value={intent}
+                      onChange={(e) => setIntent(e.target.value)}
+                      placeholder={t('intentPlaceholder')}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all pl-12"
+                      autoFocus
+                    />
+                    <div className="absolute left-4 top-4 text-slate-500">
+                        <Compass size={20} />
+                    </div>
+                 </div>
+                 <p className="text-xs text-slate-500 mt-2 ml-1">{t('intentDesc')}</p>
                </div>
              )}
 

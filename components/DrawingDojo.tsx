@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Lock, CheckCircle2, Eye, Timer, ThumbsUp, ThumbsDown, AlertCircle, PenTool, BrainCircuit } from 'lucide-react';
+import { RotateCcw, Lock, CheckCircle2, Eye, Timer, ThumbsUp, ThumbsDown, AlertCircle, PenTool, BrainCircuit, Target, Zap, Trophy, XCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import SketchPad from './SketchPad';
 
@@ -38,9 +38,17 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
   const [step, setStep] = useState<'memorize' | 'draw' | 'check'>('memorize');
   const [currentGestalt, setCurrentGestalt] = useState(GESTALTS[0]);
   const [timer, setTimer] = useState(2);
-  const [streak, setStreak] = useState(0);
   const [userSketch, setUserSketch] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState(false);
+  
+  // Stats State
+  const [stats, setStats] = useState({
+    attempts: 0,
+    successes: 0,
+    failures: 0,
+    streak: 0,
+    bestStreak: 0
+  });
   
   // Results
   const [isMatch, setIsMatch] = useState(false);
@@ -52,10 +60,10 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
 
   // Check unlock condition (only counts in Challenge Mode)
   useEffect(() => {
-    if (lockedMode && streak >= TARGET_STREAK) {
+    if (lockedMode && stats.streak >= TARGET_STREAK) {
       setUnlocked(true);
     }
-  }, [streak, lockedMode]);
+  }, [stats.streak, lockedMode]);
 
   // Countdown for Memorization Phase (Challenge Mode Only)
   useEffect(() => {
@@ -91,13 +99,26 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
   };
 
   const handleManualResult = (result: 'match' | 'miss') => {
-      if (result === 'match') {
-          setIsMatch(true);
-          if (mode === 'challenge') setStreak(s => s + 1);
-      } else {
-          setIsMatch(false);
-          if (mode === 'challenge') setStreak(0);
-      }
+      const isSuccess = result === 'match';
+      setIsMatch(isSuccess);
+
+      // Update Stats
+      setStats(prev => {
+        // Reset streak if miss, increment if success
+        // In Practice mode, we track stats but they don't count towards unlocking if lockedMode is set (usually logic implies challenge mode for unlocking)
+        // However, user might want to see stats in practice too.
+        // We will track stats globally for the session.
+        
+        const newStreak = isSuccess ? prev.streak + 1 : 0;
+        return {
+            attempts: prev.attempts + 1,
+            successes: isSuccess ? prev.successes + 1 : prev.successes,
+            failures: !isSuccess ? prev.failures + 1 : prev.failures,
+            streak: newStreak,
+            bestStreak: Math.max(prev.bestStreak, newStreak)
+        };
+      });
+
       setManualCheckMode(false);
   };
 
@@ -112,7 +133,8 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
           return;
       }
       setMode(prev => prev === 'challenge' ? 'practice' : 'challenge');
-      setStreak(0);
+      // Reset streak on mode change to separate contexts
+      setStats(prev => ({ ...prev, streak: 0 }));
   };
 
   return (
@@ -140,7 +162,7 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
                             // Logic handled in toggleMode for switching AWAY
                          }
                          setMode('challenge');
-                         setStreak(0);
+                         setStats(prev => ({ ...prev, streak: 0 }));
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${mode === 'challenge' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                 >
@@ -153,10 +175,45 @@ const DrawingDojo: React.FC<DrawingDojoProps> = ({ onClose, lockedMode = false }
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${unlocked ? 'bg-green-900/30 border-green-500 text-green-400' : 'bg-red-900/30 border-red-500 text-red-400 animate-pulse'}`}>
             {unlocked ? <CheckCircle2 size={16} /> : <Lock size={16} />}
             <span className="text-sm font-bold">
-              {unlocked ? t('dojoUnlockedMsg') : `${t('dojoLockedMsg')} (${streak}/${TARGET_STREAK})`}
+              {unlocked ? t('dojoUnlockedMsg') : `${t('dojoLockedMsg')} (${stats.streak}/${TARGET_STREAK})`}
             </span>
           </div>
         )}
+      </div>
+
+      {/* Stats Bar */}
+      <div className="flex flex-wrap justify-center gap-4 mb-8 w-full animate-in slide-in-from-top-4">
+        <div className="bg-slate-800/50 px-4 py-2 md:px-6 md:py-3 rounded-2xl border border-slate-700 flex items-center gap-3 min-w-[140px]">
+          <Target className="text-blue-400" size={20} />
+          <div>
+            <div className="text-[10px] md:text-xs text-slate-400 font-bold uppercase">Attempts</div>
+            <div className="text-lg md:text-xl font-bold text-white">{stats.attempts}</div>
+          </div>
+        </div>
+        
+        <div className="bg-slate-800/50 px-4 py-2 md:px-6 md:py-3 rounded-2xl border border-slate-700 flex items-center gap-3 min-w-[140px]">
+          <CheckCircle2 className="text-green-400" size={20} />
+          <div>
+            <div className="text-[10px] md:text-xs text-slate-400 font-bold uppercase">Success</div>
+            <div className="text-lg md:text-xl font-bold text-white">{stats.successes}</div>
+          </div>
+        </div>
+
+        <div className="bg-slate-800/50 px-4 py-2 md:px-6 md:py-3 rounded-2xl border border-slate-700 flex items-center gap-3 min-w-[140px]">
+          <XCircle className="text-red-400" size={20} />
+          <div>
+            <div className="text-[10px] md:text-xs text-slate-400 font-bold uppercase">Misses</div>
+            <div className="text-lg md:text-xl font-bold text-white">{stats.failures}</div>
+          </div>
+        </div>
+
+        <div className="bg-slate-800/50 px-4 py-2 md:px-6 md:py-3 rounded-2xl border border-slate-700 flex items-center gap-3 min-w-[140px]">
+          <Zap className="text-yellow-400" size={20} />
+          <div>
+            <div className="text-[10px] md:text-xs text-slate-400 font-bold uppercase">Streak</div>
+            <div className="text-lg md:text-xl font-bold text-white">{stats.streak}</div>
+          </div>
+        </div>
       </div>
 
       {/* Main Area */}

@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Wind, Volume2, VolumeX, ArrowRight } from 'lucide-react';
+import { Wind, Volume2, VolumeX, ArrowRight, Target } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Step1Props {
   coordinate: string;
+  intent?: string; // Optional intent for Open Mode
   onNext: () => void;
 }
 
-const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
+const Step1Focus: React.FC<Step1Props> = ({ coordinate, intent, onNext }) => {
   const { t } = useLanguage();
   const [isFocusing, setIsFocusing] = useState(false);
   const [breathState, setBreathState] = useState<'in' | 'hold' | 'out'>('in');
@@ -127,11 +128,23 @@ const Step1Focus: React.FC<Step1Props> = ({ coordinate, onNext }) => {
       
       {!isFocusing ? (
         <>
-          <div className="space-y-2">
-            <h3 className="text-slate-400 text-sm uppercase tracking-widest">{t('trn')}</h3>
-            <div className="text-6xl md:text-7xl font-mono font-bold text-white tracking-wider drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-              {coordinate}
-            </div>
+          <div className="space-y-4">
+             <div className="space-y-2">
+                <h3 className="text-slate-400 text-sm uppercase tracking-widest">{t('trn')}</h3>
+                <div className="text-6xl md:text-7xl font-mono font-bold text-white tracking-wider drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                  {coordinate}
+                </div>
+             </div>
+             
+             {intent && (
+                 <div className="animate-in slide-in-from-bottom-2 fade-in duration-500">
+                     <div className="inline-block px-4 py-2 bg-purple-900/30 border border-purple-500/30 rounded-lg">
+                        <p className="text-purple-300 font-medium text-lg flex items-center gap-2">
+                           <Target size={18} /> {intent}
+                        </p>
+                     </div>
+                 </div>
+             )}
           </div>
           
           <div className="max-w-lg bg-slate-800/50 p-6 rounded-xl border border-slate-700 relative overflow-hidden">

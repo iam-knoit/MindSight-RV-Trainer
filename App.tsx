@@ -5,7 +5,7 @@ import { auth, subscribeToHistory, saveSessionToCloud, updateSessionRemarks, upd
 import { analyzeSession, generateTargetImage, generateCoachReport, recalculateScore, analyzeOpenSession, generateVisualReconstruction, generateDrawingTips } from './services/geminiService';
 import { SessionState, SessionData, CoachReport, IntuitionStats, SessionType } from './types';
 import { useLanguage } from './contexts/LanguageContext';
-import { Brain, Sparkles, Image as ImageIcon, CheckCircle, XCircle, ArrowLeft, ArrowRight, Loader2, Eye, LogIn, LogOut } from 'lucide-react';
+import { Brain, Sparkles, Image as ImageIcon, CheckCircle, XCircle, ArrowLeft, ArrowRight, Loader2, Eye, LogIn, LogOut, MessageSquarePlus, Tag } from 'lucide-react';
 
 import DashboardView from './components/views/DashboardView';
 import FeedbackView from './components/views/FeedbackView';
@@ -47,6 +47,9 @@ const App: React.FC = () => {
   // Drawing Guidance State
   const [drawingTips, setDrawingTips] = useState<string[]>([]);
   const [isLoadingTips, setIsLoadingTips] = useState(false);
+
+  // AOL Input State (Step 3)
+  const [aolInput, setAolInput] = useState('');
 
   // Modals & UI
   const [showAuth, setShowAuth] = useState(false);
@@ -136,6 +139,7 @@ const App: React.FC = () => {
     setShowModeSelect(false);
     setStep(1);
     setDrawingTips([]); // Clear tips from previous session
+    setAolInput(''); // Clear AOL input
     
     const newSession: SessionData = {
       id: Date.now().toString(),
@@ -156,7 +160,6 @@ const App: React.FC = () => {
         newSession.targetImageBase64 = target.base64;
       } catch (e) {
         console.error("Failed to start session", e);
-        // Fallback or alert? For now, proceed (though analysis might fail if no target)
       } finally {
         setIsLoading(false);
       }
@@ -167,24 +170,20 @@ const App: React.FC = () => {
   };
 
   const goHome = () => {
-    // 1. Block exit if locked in Zener Dojo
     if (sessionState === SessionState.DOJO && isDojoLocked) {
       alert(t('completeCalibration'));
       return;
     }
 
-    // 2. Block exit if locked in Drawing Dojo
     if (sessionState === SessionState.DRAWING_DOJO && isDojoLocked) {
       alert(t('completeCalibration'));
       return;
     }
 
-    // 3. Check for Low Scores in Feedback Mode (Training only)
     if (sessionState === SessionState.FEEDBACK && currentSession?.sessionType === 'TRAINING') {
         const score = currentSession.aiScore ?? 100;
         const drawingScore = currentSession.drawingScore ?? 100;
 
-        // Condition A: Total Score < 50 -> Intuition Dojo
         if (score < 50) {
             alert(t('lowScoreRedirect'));
             setIsDojoLocked(true);
@@ -192,7 +191,6 @@ const App: React.FC = () => {
             return;
         } 
         
-        // Condition B: Total Score >= 50 BUT Drawing Score < 45 -> Drawing Dojo
         if (score >= 50 && drawingScore < 45) {
             alert(t('lowDrawingRedirect'));
             setIsDojoLocked(true);
@@ -228,6 +226,19 @@ const App: React.FC = () => {
     if (currentSession) setCurrentSession({ ...currentSession, userSketchBase64: base64 });
   };
 
+  // AOL / Subject Feel Handling
+  const handleAddAOL = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aolInput.trim() || !currentSession) return;
+    
+    // Add new AOL to existing notes as a tag
+    const separator = currentSession.userNotes.length > 0 ? ', ' : '';
+    // We prefix with [AOL] to distinguish it slightly in raw text, or just treat as a tag
+    const newNote = `${aolInput.trim()}`; 
+    updateNotes(currentSession.userNotes + separator + newNote);
+    setAolInput('');
+  };
+
   // Submission & Analysis
   const submitSession = async () => {
     if (!currentSession) return;
@@ -236,7 +247,6 @@ const App: React.FC = () => {
     setLoadingMessage(currentSession.sessionType === 'TRAINING' ? t('analyzingDesc') : t('savingDesc'));
 
     try {
-      // Calculate duration
       const durationSeconds = Math.round((Date.now() - currentSession.timestamp) / 1000);
 
       let resultSession = { 
@@ -245,7 +255,6 @@ const App: React.FC = () => {
       };
 
       if (currentSession.sessionType === 'TRAINING') {
-          // AI Analysis for Training
           const analysis = await analyzeSession(
              currentSession.targetImageBase64!, 
              currentSession.userSketchBase64, 
@@ -257,15 +266,11 @@ const App: React.FC = () => {
           resultSession.notesScore = analysis.notesScore;
           resultSession.aiFeedback = analysis.feedback;
       } else {
-          // Open Session - Just save, optional analysis later
           resultSession.aiFeedback = "Open session recorded. Use 'Ask AI Analyst' to interpret data.";
       }
 
-      // Save to History (Local or Cloud)
       if (user) {
         await saveSessionToCloud(user.uid, resultSession);
-      } else {
-        // Guest mode - local state only (already updated via history prop if we were using it, but here we just set currentSession)
       }
 
       setCurrentSession(resultSession);
@@ -273,7 +278,7 @@ const App: React.FC = () => {
 
     } catch (error) {
       console.error("Analysis Error", error);
-      setSessionState(SessionState.VIEWING); // Return to view to retry
+      setSessionState(SessionState.VIEWING);
       setStep(4);
       alert(t('analysisErrorDesc'));
     }
@@ -283,10 +288,8 @@ const App: React.FC = () => {
      if (!currentSession || !user) return;
      setIsSavingRemarks(true);
      try {
-        // 1. Update Remarks
         await updateSessionRemarks(user.uid, currentSession.id, remarks);
         
-        // 2. If Training, Recalculate Score
         if (currentSession.sessionType === 'TRAINING') {
             const newScore = await recalculateScore(currentSession, remarks);
             const updatedData = {
@@ -418,7 +421,6 @@ const App: React.FC = () => {
               <div className="flex items-center gap-4">
                 {user && (
                   <div className="hidden sm:flex items-center gap-3 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700">
-                    {/* Rank Badge or Loading State */}
                     {!isHistoryLoaded ? (
                       <div className="w-24 h-5 bg-slate-700 rounded animate-pulse"></div>
                     ) : currentRank.isRanked ? (
@@ -512,7 +514,13 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="flex-grow overflow-y-auto p-4 md:p-8 custom-scrollbar">
-                    {step === 1 && <Step1Focus coordinate={currentSession.coordinate} onNext={handleStepNext} />}
+                    {step === 1 && (
+                        <Step1Focus 
+                          coordinate={currentSession.coordinate} 
+                          intent={currentSession.targetIntent} 
+                          onNext={handleStepNext} 
+                        />
+                    )}
                     {step === 2 && <Step2Impressions notes={currentSession.userNotes} onChange={updateNotes} onNext={handleStepNext} onBack={handleStepBack} />}
                     {step === 3 && (
                         <div className="max-w-4xl mx-auto h-full flex flex-col animate-in slide-in-from-right-8 duration-300">
@@ -520,7 +528,8 @@ const App: React.FC = () => {
                                 <h2 className="text-2xl font-bold text-white mb-2">{t('stage2Title')}</h2>
                                 <p className="text-slate-400">{t('stage2Desc')}</p>
                             </div>
-                            {/* Centered Square Container for SketchPad */}
+                            
+                            {/* SketchPad */}
                             <div className="flex-grow flex items-center justify-center">
                                 <div className="w-full max-w-[550px]">
                                     <SketchPad 
@@ -529,8 +538,34 @@ const App: React.FC = () => {
                                       drawingTips={drawingTips}
                                       isLoadingTips={isLoadingTips}
                                     />
+                                    
+                                    {/* AOL / Subject Feel Input for Step 3 */}
+                                    <form onSubmit={handleAddAOL} className="mt-4 flex gap-2 w-full animate-in slide-in-from-bottom-2">
+                                        <div className="relative flex-grow">
+                                            <div className="absolute left-3 top-3 text-slate-500">
+                                                <Tag size={16} />
+                                            </div>
+                                            <input 
+                                                type="text" 
+                                                value={aolInput}
+                                                onChange={(e) => setAolInput(e.target.value)}
+                                                placeholder="AOL / Signal Feel (e.g. 'Looks like a bridge')"
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-4 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                            />
+                                        </div>
+                                        <button 
+                                            type="submit"
+                                            disabled={!aolInput.trim()}
+                                            className="bg-slate-800 hover:bg-slate-700 text-blue-400 p-2.5 rounded-xl border border-slate-700 transition-colors disabled:opacity-50"
+                                            title="Add Note"
+                                        >
+                                            <MessageSquarePlus size={20} />
+                                        </button>
+                                    </form>
+                                    
                                 </div>
                             </div>
+
                             <div className="flex justify-between mt-6">
                                 <button onClick={handleStepBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2 transition-all active:scale-95">
                                     <ArrowLeft size={18} /> {t('btnBack')}

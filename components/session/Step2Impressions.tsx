@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { BookOpen, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { BookOpen, X, ArrowLeft, ArrowRight, Tag, Plus } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Step2Props {
@@ -14,8 +14,10 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
   const { t, language } = useLanguage();
   const [showHelper, setShowHelper] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("Colors");
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Descriptor data for the helper
+  // descriptor data (unchanged)
   const descriptors: Record<string, Record<string, string[]>> = {
     en: {
       "Colors": ["Red", "Blue", "Green", "Yellow", "Black", "White", "Grey", "Brown", "Bright", "Dark", "Shiny", "Matte"],
@@ -39,17 +41,44 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
 
   const currentDescriptors = descriptors[language] || descriptors['en'];
   const categories = Object.keys(currentDescriptors);
+  
+  // Parse tags from comma-separated string
+  const tags = notes.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
   useEffect(() => {
-    // Reset active category when language changes to avoid undefined state
     if (!categories.includes(activeCategory)) {
       setActiveCategory(categories[0]);
     }
   }, [language, categories, activeCategory]);
 
-  const addWord = (word: string) => {
-    const separator = notes.length > 0 && !notes.endsWith(' ') ? ', ' : '';
-    onChange(notes + separator + word);
+  const updateTags = (newTags: string[]) => {
+    onChange(newTags.join(', '));
+  };
+
+  const addTag = (text: string) => {
+    const trimmed = text.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      updateTags([...tags, trimmed]);
+    }
+    setInputValue("");
+  };
+
+  const removeTag = (indexToRemove: number) => {
+    updateTags(tags.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(inputValue);
+    } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  };
+
+  // Focus input when clicking container
+  const handleContainerClick = () => {
+    inputRef.current?.focus();
   };
 
   return (
@@ -61,15 +90,38 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-800/50 p-1 rounded-2xl border border-slate-700 focus-within:border-blue-500/50 transition-colors h-full">
-            <textarea
-              className="w-full h-80 bg-slate-900 rounded-xl p-6 text-lg text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none"
-              placeholder={t('placeholderNotes')}
-              value={notes}
-              onChange={(e) => onChange(e.target.value)}
-              autoFocus
-            />
+          
+          {/* Tag Input Container */}
+          <div 
+            onClick={handleContainerClick}
+            className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all h-80 overflow-y-auto custom-scrollbar cursor-text"
+          >
+             <div className="flex flex-wrap gap-2">
+                {tags.map((tag, index) => (
+                  <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-200 border border-blue-500/30 text-sm animate-in zoom-in-95 duration-200">
+                    {tag}
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); removeTag(index); }}
+                      className="hover:text-white transition-colors p-0.5 rounded-full hover:bg-blue-600/40"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+                
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="bg-transparent border-none outline-none text-slate-200 placeholder:text-slate-600 min-w-[120px] flex-grow py-1.5"
+                  placeholder={tags.length === 0 ? t('placeholderNotes') : "Type and press comma..."}
+                  autoFocus
+                />
+             </div>
           </div>
+
           <div className="flex justify-between">
             <button onClick={onBack} className="text-slate-500 hover:text-slate-300 flex items-center gap-2 px-4 py-2 transition-all active:scale-95">
               <ArrowLeft size={18} /> {t('btnBack')}
@@ -80,7 +132,7 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
           </div>
         </div>
 
-        {/* Helper Sidebar / Toggle */}
+        {/* Helper Sidebar */}
         <div className="lg:col-span-1">
           {!showHelper ? (
              <button 
@@ -103,7 +155,6 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
               
               <p className="text-xs text-slate-500 mb-3">{t('helperTip')}</p>
 
-              {/* Categories Tabs */}
               <div className="flex flex-wrap gap-2 mb-3">
                 {categories.map(cat => (
                   <button
@@ -116,16 +167,16 @@ const Step2Impressions: React.FC<Step2Props> = ({ notes, onChange, onNext, onBac
                 ))}
               </div>
 
-              {/* Words Grid */}
               <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar">
                  <div className="grid grid-cols-2 gap-2">
                     {currentDescriptors[activeCategory]?.map(word => (
                       <button
                         key={word}
-                        onClick={() => addWord(word)}
-                        className="text-left px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-blue-300 text-xs transition-all active:scale-95 border border-slate-700/50"
+                        onClick={() => addTag(word)}
+                        className="text-left px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-blue-300 text-xs transition-all active:scale-95 border border-slate-700/50 flex items-center justify-between group"
                       >
                         {word}
+                        <Plus size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     ))}
                  </div>
